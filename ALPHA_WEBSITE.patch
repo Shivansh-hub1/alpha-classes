@@ -1,0 +1,3560 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..8158164
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,16 @@
++# ---- Database (Neon) ----
++# Paste your Neon connection string (Neon dashboard -> Connect -> Connection string)
++DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
++
++# ---- Auth (required in production) ----
++# Any long random string. Generate one: https://generate-secret.vercel.app/  (or run:  openssl rand -hex 32)
++AUTH_SECRET=change-me-to-a-long-random-string
++
++# ---- Admin panel password ----
++ADMIN_PASSWORD=change-me-admin-password
++
++# ---- Site URL (used for SEO: sitemap, canonical, OpenGraph) ----
++NEXT_PUBLIC_SITE_URL=https://your-domain.com
++
++# ---- Optional: demo video (YouTube video ID shown in the hero popup) ----
++# NEXT_PUBLIC_DEMO_VIDEO_ID=dQw4w9WgXcQ
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..7f9f02d
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,8 @@
++node_modules/
++.next/
++out/
++.env
++.env*.local
++*.tsbuildinfo
++next-env.d.ts
++.DS_Store
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..3b9069b
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,62 @@
++# Alpha Classes — Full Website (Frontend + Backend + SEO)
++
++Next.js 14 website for Alpha Classes coaching institute.
++Design is preserved from the approved frontend preview; everything now works for real.
++
++## What's included
++
++- **Landing page** — same design, now powered by the database
++- **Courses** — DB-driven course listing + SEO course pages (Course structured data)
++- **Free test series** — timed online tests, auto-submit, instant results, answer review, scores saved
++- **Student accounts** — signup / login / logout (bcrypt + secure JWT cookies)
++- **Student dashboard** — enrolled courses, test history, best score
++- **Enquiry / lead capture** — contact form + per-course enquiry forms
++- **Admin panel** (`/admin`) — view enquiries (with status tracking: new → contacted → joined → closed), students, test results
++- **SEO** — per-page titles/descriptions, OpenGraph + Twitter cards, dynamic `sitemap.xml`, `robots.txt`, JSON-LD (EducationalOrganization + Course + FAQ), web manifest, OG image
++- **Custom 404 page** — branded, matching design
++- **Mobile menu** — hamburger navigation on small screens
++
++## Environment variables (required in production)
++
++Set these in **Vercel → Project → Settings → Environment Variables**:
++
++| Variable | What it is |
++|---|---|
++| `DATABASE_URL` | Neon connection string (Neon dashboard → Connect) |
++| `AUTH_SECRET` | Long random string — signs login sessions (`openssl rand -hex 32`) |
++| `ADMIN_PASSWORD` | Password for the `/admin` panel |
++| `NEXT_PUBLIC_SITE_URL` | Your final domain, e.g. `https://alphaclasses.com` (used for SEO/sitemap) |
++| `NEXT_PUBLIC_DEMO_VIDEO_ID` | (Optional) YouTube video ID for the homepage demo popup |
++
++> Tables and sample data (6 courses, 3 tests with real questions) are created
++> automatically on the first request — no manual migration needed.
++
++## Database
++
++Uses **Neon Postgres** (`pg` driver). Works on Vercel out of the box.
++Edit course/test content directly in `lib/db.ts` seed data (first run) or in the database afterwards.
++
++## Deploying on Vercel
++
++1. Push this repo to GitHub.
++2. In Vercel: **Add New → Project → Import** the repo.
++3. Add the environment variables above (create a free Neon project for `DATABASE_URL`).
++4. Deploy. Done — every push auto-deploys.
++
++## Structure
++
++```
++app/                  pages (App Router) + API routes
++  api/                auth, enquiries, enroll, test submit, admin
++components/           Header, Footer, forms, TestRunner, AdminPanel…
++lib/    db.ts         database schema, seed data, queries
++        auth.ts       sessions (JWT cookies), admin auth
++middleware.ts         protects /dashboard
++```
++
++## Roadmap (needs client input)
++
++- Online payments (Razorpay) for paid batches
++- Video classes hosting inside course pages
++- Notes/PDF downloads per course
++- Teacher panel
+diff --git a/README.txt b/README.txt
+deleted file mode 100644
+index f653838..0000000
+--- a/README.txt
++++ /dev/null
+@@ -1,16 +0,0 @@
+-ALPHA CLASSES — FRONTEND PREVIEW
+-
+-1. Open index.html in Chrome/Edge.
+-2. No server or installation is required.
+-3. This is a frontend-only preview. Buttons currently show demo alerts.
+-
+-Next step can be a full platform with:
+-- Student login/signup
+-- Admin dashboard
+-- Course pages
+-- Video classes
+-- Test system
+-- Notes/PDFs
+-- Payments
+-- Student progress dashboard
+-- Teacher panel
+diff --git a/app/about/page.tsx b/app/about/page.tsx
+new file mode 100644
+index 0000000..315a683
+--- /dev/null
++++ b/app/about/page.tsx
+@@ -0,0 +1,46 @@
++import Link from "next/link";
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "About Alpha Classes — Our Mission & Teaching Method",
++  description: "Alpha Classes helps students build strong concepts through live classes, structured study material, regular tests and personal doubt support — from school foundations to competitive exams.",
++  alternates: { canonical: "/about" },
++};
++
++export default function AboutPage() {
++  return (
++    <main className="container">
++      <div className="page-head">
++        <h1>About Alpha Classes</h1>
++        <p>Learn Today. Lead Tomorrow.</p>
++      </div>
++      <section className="section prose" style={{ paddingTop: 26, maxWidth: 760 }}>
++        <p>
++          Alpha Classes is a coaching institute built around one idea: every student can perform better
++          with the right guidance, structure and practice. We teach school foundations (Class 9–10),
++          competitive exam preparation (JEE, NEET, SSC) and practical skill courses — with the same
++          focus on concept clarity.
++        </p>
++        <h3>How we teach</h3>
++        <ul className="hl-list">
++          <li><b>Concept-first classes</b> — live teaching where you can ask questions, plus recordings to revise anytime.</li>
++          <li><b>Structured material</b> — notes, PDFs and practice sheets aligned with the syllabus.</li>
++          <li><b>Regular testing</b> — timed online tests with instant results and question-wise review.</li>
++          <li><b>Doubt support</b> — teachers available to unblock you when you are stuck.</li>
++          <li><b>Progress tracking</b> — every student sees their scores and progress in one dashboard.</li>
++        </ul>
++        <h3 id="careers">Careers</h3>
++        <p>
++          We are always looking for passionate teachers. If you love teaching Maths, Science, English or
++          skill subjects, send your details from the <Link href="/contact" style={{ color: "#f56600", fontWeight: 700 }}>contact page</Link> with the
++          subject &quot;Teaching Application&quot;.
++        </p>
++        <h3>Visit us</h3>
++        <p>Want to see how a class feels? Book a free demo class from the <Link href="/contact" style={{ color: "#f56600", fontWeight: 700 }}>contact page</Link> and experience it yourself.</p>
++        <div style={{ marginTop: 24 }}>
++          <Link className="btn btn-primary" href="/courses">Explore Courses →</Link>
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/admin/page.tsx b/app/admin/page.tsx
+new file mode 100644
+index 0000000..1193da1
+--- /dev/null
++++ b/app/admin/page.tsx
+@@ -0,0 +1,52 @@
++import type { Metadata } from "next";
++import { pool, ensureDb } from "@/lib/db";
++import { isAdmin } from "@/lib/auth";
++import AdminLogin from "@/components/AdminLogin";
++import AdminPanel, { AdminData } from "@/components/AdminPanel";
++import AdminLogout from "@/components/AdminLogout";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "Admin Panel",
++  robots: { index: false, follow: false },
++};
++
++export default async function AdminPage() {
++  if (!(await isAdmin())) return <AdminLogin />;
++
++  await ensureDb();
++  const enquiries = await pool.query(
++    `SELECT e.id, e.name, e.email, e.phone, e.message, e.status, e.created_at, c.title AS course
++     FROM enquiries e LEFT JOIN courses c ON c.id = e.course_id ORDER BY e.created_at DESC LIMIT 200`
++  );
++  const students = await pool.query(
++    "SELECT id, name, email, phone, created_at FROM students ORDER BY created_at DESC LIMIT 200"
++  );
++  const results = await pool.query(
++    `SELECT r.id, s.name AS student, t.title AS test, r.score, r.total, r.created_at
++     FROM test_results r JOIN students s ON s.id = r.student_id JOIN tests t ON t.id = r.test_id
++     ORDER BY r.created_at DESC LIMIT 200`
++  );
++
++  const data: AdminData = {
++    enquiries: enquiries.rows,
++    students: students.rows,
++    results: results.rows,
++  };
++
++  return (
++    <main className="container">
++      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "start", flexWrap: "wrap", gap: 12 }}>
++        <div>
++          <h1>Admin Panel</h1>
++          <p>Enquiries, students and test results.</p>
++        </div>
++        <AdminLogout />
++      </div>
++      <section className="section" style={{ paddingTop: 26 }}>
++        <AdminPanel data={data} />
++      </section>
++    </main>
++  );
++}
+diff --git a/app/api/admin/enquiries/[id]/route.ts b/app/api/admin/enquiries/[id]/route.ts
+new file mode 100644
+index 0000000..a6b009d
+--- /dev/null
++++ b/app/api/admin/enquiries/[id]/route.ts
+@@ -0,0 +1,28 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++import { isAdmin } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++const VALID = new Set(["new", "contacted", "joined", "closed"]);
++
++export async function PATCH(req: Request, { params }: { params: { id: string } }) {
++  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++
++  try {
++    const body = await req.json().catch(() => null);
++    const status = String(body?.status || "");
++    if (!VALID.has(status)) return NextResponse.json({ error: "Invalid status." }, { status: 400 });
++
++    await ensureDb();
++    const id = Number(params.id);
++    if (!id) return NextResponse.json({ error: "Invalid id." }, { status: 400 });
++
++    await pool.query("UPDATE enquiries SET status = $1 WHERE id = $2", [status, id]);
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("admin enquiry update error", e);
++    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
++  }
++}
+diff --git a/app/api/admin/login/route.ts b/app/api/admin/login/route.ts
+new file mode 100644
+index 0000000..b108971
+--- /dev/null
++++ b/app/api/admin/login/route.ts
+@@ -0,0 +1,25 @@
++import { NextResponse } from "next/server";
++import { createAdminSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request) {
++  try {
++    const body = await req.json().catch(() => null);
++    const password = String(body?.password || "");
++    const expected = process.env.ADMIN_PASSWORD;
++
++    if (!expected) {
++      return NextResponse.json({ error: "Admin login is not configured. Set ADMIN_PASSWORD in your environment variables." }, { status: 503 });
++    }
++    if (password !== expected) {
++      return NextResponse.json({ error: "Wrong admin password." }, { status: 401 });
++    }
++    await createAdminSession();
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("admin login error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/admin/logout/route.ts b/app/api/admin/logout/route.ts
+new file mode 100644
+index 0000000..8dd453a
+--- /dev/null
++++ b/app/api/admin/logout/route.ts
+@@ -0,0 +1,10 @@
++import { NextResponse } from "next/server";
++import { destroyAdminSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST() {
++  await destroyAdminSession();
++  return NextResponse.json({ ok: true });
++}
+diff --git a/app/api/auth/login/route.ts b/app/api/auth/login/route.ts
+new file mode 100644
+index 0000000..dbbdb4b
+--- /dev/null
++++ b/app/api/auth/login/route.ts
+@@ -0,0 +1,32 @@
++import { NextResponse } from "next/server";
++import bcrypt from "bcryptjs";
++import { pool, ensureDb } from "@/lib/db";
++import { createSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request) {
++  try {
++    const body = await req.json().catch(() => null);
++    if (!body) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
++
++    const email = String(body.email || "").trim().toLowerCase();
++    const password = String(body.password || "");
++    if (!email || !password) return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
++
++    await ensureDb();
++    const { rows } = await pool.query<{ id: number; name: string; password_hash: string }>(
++      "SELECT id, name, password_hash FROM students WHERE email = $1", [email]
++    );
++    const student = rows[0];
++    if (!student || !(await bcrypt.compare(password, student.password_hash))) {
++      return NextResponse.json({ error: "Wrong email or password." }, { status: 401 });
++    }
++    await createSession({ uid: student.id, name: student.name, email });
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("login error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/auth/logout/route.ts b/app/api/auth/logout/route.ts
+new file mode 100644
+index 0000000..803245e
+--- /dev/null
++++ b/app/api/auth/logout/route.ts
+@@ -0,0 +1,10 @@
++import { NextResponse } from "next/server";
++import { destroySession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST() {
++  await destroySession();
++  return NextResponse.json({ ok: true });
++}
+diff --git a/app/api/auth/signup/route.ts b/app/api/auth/signup/route.ts
+new file mode 100644
+index 0000000..47788f9
+--- /dev/null
++++ b/app/api/auth/signup/route.ts
+@@ -0,0 +1,41 @@
++import { NextResponse } from "next/server";
++import bcrypt from "bcryptjs";
++import { pool, ensureDb } from "@/lib/db";
++import { createSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request) {
++  try {
++    const body = await req.json().catch(() => null);
++    if (!body) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
++
++    const name = String(body.name || "").trim();
++    const email = String(body.email || "").trim().toLowerCase();
++    const phone = String(body.phone || "").trim();
++    const password = String(body.password || "");
++
++    if (name.length < 2) return NextResponse.json({ error: "Please enter your full name." }, { status: 400 });
++    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
++    if (phone && !/^[6-9]\d{9}$/.test(phone)) return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
++    if (password.length < 6) return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
++
++    await ensureDb();
++    const existing = await pool.query("SELECT id FROM students WHERE email = $1", [email]);
++    if (existing.rowCount && existing.rowCount > 0) {
++      return NextResponse.json({ error: "An account with this email already exists. Try logging in." }, { status: 409 });
++    }
++
++    const hash = await bcrypt.hash(password, 10);
++    const { rows } = await pool.query<{ id: number }>(
++      "INSERT INTO students (name, email, phone, password_hash) VALUES ($1,$2,$3,$4) RETURNING id",
++      [name, email, phone, hash]
++    );
++    await createSession({ uid: rows[0].id, name, email });
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("signup error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/enquiries/route.ts b/app/api/enquiries/route.ts
+new file mode 100644
+index 0000000..ffbf802
+--- /dev/null
++++ b/app/api/enquiries/route.ts
+@@ -0,0 +1,32 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request) {
++  try {
++    const body = await req.json().catch(() => null);
++    if (!body) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
++
++    const name = String(body.name || "").trim();
++    const email = String(body.email || "").trim().toLowerCase();
++    const phone = String(body.phone || "").trim();
++    const message = String(body.message || "").trim().slice(0, 2000);
++    const courseId = Number(body.courseId) || null;
++
++    if (name.length < 2) return NextResponse.json({ error: "Please enter your name." }, { status: 400 });
++    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
++    if (!/^[6-9]\d{9}$/.test(phone)) return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
++
++    await ensureDb();
++    await pool.query(
++      "INSERT INTO enquiries (name, email, phone, course_id, message) VALUES ($1,$2,$3,$4,$5)",
++      [name, email, phone, courseId, message]
++    );
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("enquiry error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/enroll/route.ts b/app/api/enroll/route.ts
+new file mode 100644
+index 0000000..9a014cb
+--- /dev/null
++++ b/app/api/enroll/route.ts
+@@ -0,0 +1,30 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++import { getSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request) {
++  const session = await getSession();
++  if (!session) return NextResponse.json({ error: "Please log in first." }, { status: 401 });
++
++  try {
++    const body = await req.json().catch(() => null);
++    const courseId = Number(body?.courseId);
++    if (!courseId) return NextResponse.json({ error: "Invalid course." }, { status: 400 });
++
++    await ensureDb();
++    const course = await pool.query("SELECT id FROM courses WHERE id = $1", [courseId]);
++    if (!course.rowCount) return NextResponse.json({ error: "Course not found." }, { status: 404 });
++
++    await pool.query(
++      "INSERT INTO enrollments (student_id, course_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
++      [session.uid, courseId]
++    );
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("enroll error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/tests/[slug]/submit/route.ts b/app/api/tests/[slug]/submit/route.ts
+new file mode 100644
+index 0000000..ffff49f
+--- /dev/null
++++ b/app/api/tests/[slug]/submit/route.ts
+@@ -0,0 +1,43 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++import { getSession } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function POST(req: Request, { params }: { params: { slug: string } }) {
++  const session = await getSession();
++  if (!session) return NextResponse.json({ error: "Please log in to submit a test." }, { status: 401 });
++
++  try {
++    const body = await req.json().catch(() => null);
++    const answers: Record<string, number> = (body && typeof body === "object" && body.answers) || {};
++
++    await ensureDb();
++    const { rows } = await pool.query<{ id: number }>("SELECT id FROM tests WHERE slug = $1", [params.slug]);
++    const test = rows[0];
++    if (!test) return NextResponse.json({ error: "Test not found." }, { status: 404 });
++
++    const qs = await pool.query<{ id: number; q_text: string; options: string[]; correct: number }>(
++      "SELECT id, q_text, options, correct FROM questions WHERE test_id = $1 ORDER BY sort, id", [test.id]
++    );
++
++    let score = 0;
++    const review = qs.rows.map((q) => {
++      const picked = answers[String(q.id)];
++      const isCorrect = picked === q.correct;
++      if (isCorrect) score++;
++      return { id: q.id, q_text: q.q_text, options: q.options, picked: typeof picked === "number" ? picked : null, correct: q.correct, isCorrect };
++    });
++
++    await pool.query(
++      "INSERT INTO test_results (student_id, test_id, score, total) VALUES ($1,$2,$3,$4)",
++      [session.uid, test.id, score, qs.rows.length]
++    );
++
++    return NextResponse.json({ ok: true, score, total: qs.rows.length, review });
++  } catch (e) {
++    console.error("test submit error", e);
++    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/contact/page.tsx b/app/contact/page.tsx
+new file mode 100644
+index 0000000..2c11ed4
+--- /dev/null
++++ b/app/contact/page.tsx
+@@ -0,0 +1,57 @@
++import type { Metadata } from "next";
++import EnquiryForm from "@/components/EnquiryForm";
++
++export const metadata: Metadata = {
++  title: "Contact Us — Admissions & Enquiries",
++  description: "Contact Alpha Classes for admissions, course details, free demo classes and fee structure. Send us your question and our team will get back to you.",
++  alternates: { canonical: "/contact" },
++};
++
++const faqJsonLd = {
++  "@context": "https://schema.org",
++  "@type": "FAQPage",
++  mainEntity: [
++    {
++      "@type": "Question",
++      name: "How do I join a course at Alpha Classes?",
++      acceptedAnswer: { "@type": "Answer", text: "Create a free account, open the course page and click Enroll. For paid batches, our team will contact you about fee payment and batch timings." },
++    },
++    {
++      "@type": "Question",
++      name: "Can I try a free demo class?",
++      acceptedAnswer: { "@type": "Answer", text: "Yes! Send an enquiry with your name and mobile number and mention 'Free Demo' — we will schedule a live demo class for you." },
++    },
++    {
++      "@type": "Question",
++      name: "Are the tests free?",
++      acceptedAnswer: { "@type": "Answer", text: "Yes, all online practice tests on the Test Series page are free for registered students, with instant results and answer review." },
++    },
++  ],
++};
++
++export default function ContactPage() {
++  return (
++    <main className="container">
++      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
++      <div className="page-head">
++        <h1>Contact Us</h1>
++        <p>Questions about courses, fees, batches or demo classes? Send us an enquiry — we usually reply within a day.</p>
++      </div>
++      <section className="section" style={{ paddingTop: 30 }}>
++        <div className="course-hero">
++          <div>
++            <h2 style={{ fontSize: 22, marginBottom: 14 }}>Send an enquiry</h2>
++            <EnquiryForm />
++          </div>
++          <aside className="buy-card">
++            <h3 style={{ fontSize: 17, marginBottom: 10 }}>Quick answers</h3>
++            <details className="faq-item"><summary>How do I join a course?</summary><p className="muted" style={{ marginTop: 8 }}>Create a free account, open the course page and click Enroll. For paid batches our team will contact you about fee and timings.</p></details>
++            <details className="faq-item"><summary>Can I try a free demo class?</summary><p className="muted" style={{ marginTop: 8 }}>Yes — send an enquiry with your mobile number and mention &quot;Free Demo&quot; and we will schedule one for you.</p></details>
++            <details className="faq-item"><summary>Are the online tests free?</summary><p className="muted" style={{ marginTop: 8 }}>Yes, all practice tests are free for registered students with instant results.</p></details>
++            <p className="small muted" style={{ marginTop: 14 }}>You can also call or visit us — contact details are updated by the institute.</p>
++          </aside>
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/courses/[slug]/page.tsx b/app/courses/[slug]/page.tsx
+new file mode 100644
+index 0000000..98f5693
+--- /dev/null
++++ b/app/courses/[slug]/page.tsx
+@@ -0,0 +1,108 @@
++import Link from "next/link";
++import { notFound } from "next/navigation";
++import type { Metadata } from "next";
++import { getCourse, getCourses } from "@/lib/db";
++import { getSession } from "@/lib/auth";
++import { pool, ensureDb } from "@/lib/db";
++import EnrollButton from "@/components/EnrollButton";
++import EnquiryForm from "@/components/EnquiryForm";
++
++export const dynamic = "force-dynamic";
++
++type Props = { params: { slug: string } };
++
++export async function generateMetadata({ params }: Props): Promise<Metadata> {
++  const course = await getCourse(params.slug);
++  if (!course) return { title: "Course Not Found" };
++  return {
++    title: `${course.title} — ₹${course.price.toLocaleString("en-IN")}`,
++    description: `${course.description} ${course.classes_count} classes at Alpha Classes.`,
++    alternates: { canonical: `/courses/${course.slug}` },
++    openGraph: {
++      title: `${course.title} | Alpha Classes`,
++      description: course.description,
++      type: "website",
++    },
++  };
++}
++
++export default async function CoursePage({ params }: Props) {
++  const course = await getCourse(params.slug);
++  if (!course) notFound();
++
++  const [session, courses] = await Promise.all([getSession(), getCourses()]);
++  let alreadyEnrolled = false;
++  if (session) {
++    await ensureDb();
++    const { rowCount } = await pool.query(
++      "SELECT 1 FROM enrollments WHERE student_id = $1 AND course_id = $2", [session.uid, course.id]
++    );
++    alreadyEnrolled = !!rowCount;
++  }
++  const others = courses.filter((c) => c.id !== course.id).slice(0, 3);
++
++  const jsonLd = {
++    "@context": "https://schema.org",
++    "@type": "Course",
++    name: course.title,
++    description: course.description,
++    provider: { "@type": "EducationalOrganization", name: "Alpha Classes", url: process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app" },
++    offers: { "@type": "Offer", price: course.price, priceCurrency: "INR", category: "Paid" },
++  };
++
++  return (
++    <main className="container">
++      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
++      <div className="page-head">
++        <h1>{course.icon} {course.title}</h1>
++        <p>{course.description}</p>
++      </div>
++
++      <div className="course-hero">
++        <div>
++          <div className="test-meta">
++            <span>📘 {course.level}</span>
++            <span>🎥 {course.classes_count} classes</span>
++            <span>🧪 Practice tests included</span>
++          </div>
++          <h2 style={{ fontSize: 22, margin: "14px 0 4px" }}>What you get</h2>
++          <ul className="hl-list">
++            {course.highlights.split("|").filter(Boolean).map((h) => <li key={h}>{h}</li>)}
++            <li>Live + recorded classes</li>
++            <li>Notes, PDFs and practice sheets</li>
++            <li>Doubt support from teachers</li>
++          </ul>
++
++          <h2 style={{ fontSize: 22, margin: "26px 0 14px" }}>Have a question about this course?</h2>
++          <EnquiryForm courseId={course.id} courseTitle={course.title} />
++        </div>
++
++        <aside className="buy-card">
++          <span className="level">{course.level}</span>
++          <div style={{ margin: "12px 0 4px" }} className="price-tag">₹{course.price.toLocaleString("en-IN")}</div>
++          <p className="small muted">One-time fee · Full course access</p>
++          <div style={{ margin: "16px 0" }}>
++            <EnrollButton courseId={course.id} loggedIn={!!session} alreadyEnrolled={alreadyEnrolled} />
++          </div>
++          <ul className="hl-list" style={{ marginTop: 8 }}>
++            <li>{course.classes_count} live + recorded classes</li>
++            <li>Practice tests with instant results</li>
++            <li>Doubt clearing support</li>
++          </ul>
++        </aside>
++      </div>
++
++      <section className="section" style={{ paddingBottom: 20 }}>
++        <div className="section-head"><div><h2 style={{ fontSize: 25 }}>More courses</h2></div></div>
++        <div className="grid">
++          {others.map((c) => (
++            <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
++              <div className="card-top"><div className="icon">{c.icon}</div><span className="level">{c.level}</span></div>
++              <div className="card-body"><h3>{c.title}</h3><p>{c.description}</p></div>
++            </Link>
++          ))}
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/courses/page.tsx b/app/courses/page.tsx
+new file mode 100644
+index 0000000..fab218f
+--- /dev/null
++++ b/app/courses/page.tsx
+@@ -0,0 +1,37 @@
++import Link from "next/link";
++import type { Metadata } from "next";
++import { getCourses } from "@/lib/db";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "All Courses — Class 9–10, JEE, NEET, SSC & Skills",
++  description: "Explore all Alpha Classes courses: Class 9–10 Foundation, JEE Preparation, NEET Preparation, SSC Complete Course, Web Development and Computer & Career Skills.",
++  alternates: { canonical: "/courses" },
++};
++
++export default async function CoursesPage() {
++  const courses = await getCourses();
++  return (
++    <main className="container">
++      <div className="page-head">
++        <h1>All Courses</h1>
++        <p>Choose a path and start learning. Live + recorded classes, study material and tests included in every course.</p>
++      </div>
++      <section className="section" style={{ paddingTop: 30 }}>
++        <div className="grid">
++          {courses.map((c) => (
++            <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
++              <div className="card-top"><div className="icon">{c.icon}</div><span className="level">{c.level}</span></div>
++              <div className="card-body">
++                <h3>{c.title}</h3>
++                <p>{c.description}</p>
++                <div className="meta"><span>{c.classes_count} Classes</span><b>₹{c.price.toLocaleString("en-IN")}</b></div>
++              </div>
++            </Link>
++          ))}
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/dashboard/page.tsx b/app/dashboard/page.tsx
+new file mode 100644
+index 0000000..f58705d
+--- /dev/null
++++ b/app/dashboard/page.tsx
+@@ -0,0 +1,103 @@
++import Link from "next/link";
++import { redirect } from "next/navigation";
++import type { Metadata } from "next";
++import { pool, ensureDb } from "@/lib/db";
++import { getSession } from "@/lib/auth";
++import LogoutButton from "@/components/LogoutButton";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "My Dashboard",
++  robots: { index: false, follow: false },
++};
++
++export default async function Dashboard() {
++  const session = await getSession();
++  if (!session) redirect("/login?next=/dashboard");
++
++  await ensureDb();
++  const enrolled = await pool.query<{ id: number; slug: string; title: string; icon: string; level: string }>(
++    `SELECT c.id, c.slug, c.title, c.icon, c.level FROM enrollments e JOIN courses c ON c.id = e.course_id
++     WHERE e.student_id = $1 ORDER BY e.created_at DESC`, [session.uid]
++  );
++  const results = await pool.query<{ id: number; title: string; score: number; total: number; created_at: string }>(
++    `SELECT r.id, t.title, r.score, r.total, r.created_at FROM test_results r JOIN tests t ON t.id = r.test_id
++     WHERE r.student_id = $1 ORDER BY r.created_at DESC LIMIT 20`, [session.uid]
++  );
++
++  const firstName = session.name.split(" ")[0];
++  const bestPct = results.rows.length
++    ? Math.max(...results.rows.map((r) => Math.round((r.score / r.total) * 100)))
++    : null;
++
++  return (
++    <main className="container">
++      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "start", flexWrap: "wrap", gap: 12 }}>
++        <div>
++          <h1>Hi {firstName} 👋</h1>
++          <p>Continue learning and track your progress.</p>
++        </div>
++        <LogoutButton />
++      </div>
++
++      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, margin: "26px 0" }} className="stats-grid">
++        <div className="stat-card"><strong>{enrolled.rows.length}</strong><span>Courses enrolled</span></div>
++        <div className="stat-card"><strong>{results.rows.length}</strong><span>Tests attempted</span></div>
++        <div className="stat-card"><strong>{bestPct === null ? "—" : bestPct + "%"}</strong><span>Best test score</span></div>
++      </div>
++
++      <section className="section" style={{ paddingTop: 20 }}>
++        <div className="section-head">
++          <div><h2 style={{ fontSize: 24 }}>My Courses</h2></div>
++          <Link href="/courses" style={{ color: "#f56600", fontWeight: 800 }}>Browse courses →</Link>
++        </div>
++        {enrolled.rows.length === 0 ? (
++          <div className="card" style={{ padding: 26 }}>
++            <p className="muted">You haven&apos;t enrolled in any course yet.</p>
++            <Link className="btn btn-primary" href="/courses" style={{ marginTop: 12, display: "inline-block" }}>Explore Courses</Link>
++          </div>
++        ) : (
++          <div className="grid">
++            {enrolled.rows.map((c) => (
++              <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
++                <div className="card-top"><div className="icon">{c.icon}</div><span className="level">{c.level}</span></div>
++                <div className="card-body"><h3>{c.title}</h3><p>Continue learning →</p></div>
++              </Link>
++            ))}
++          </div>
++        )}
++      </section>
++
++      <section className="section" style={{ paddingTop: 10 }}>
++        <div className="section-head">
++          <div><h2 style={{ fontSize: 24 }}>My Test Results</h2></div>
++          <Link href="/tests" style={{ color: "#f56600", fontWeight: 800 }}>Take a test →</Link>
++        </div>
++        {results.rows.length === 0 ? (
++          <div className="card" style={{ padding: 26 }}>
++            <p className="muted">No tests attempted yet. Try a free practice test!</p>
++            <Link className="btn btn-primary" href="/tests" style={{ marginTop: 12, display: "inline-block" }}>Start a Test</Link>
++          </div>
++        ) : (
++          <table className="data">
++            <thead><tr><th>Test</th><th>Score</th><th>When</th></tr></thead>
++            <tbody>
++              {results.rows.map((r) => {
++                const pct = Math.round((r.score / r.total) * 100);
++                const cls = pct >= 70 ? "good" : pct >= 40 ? "mid" : "bad";
++                return (
++                  <tr key={r.id}>
++                    <td><b>{r.title}</b></td>
++                    <td><span className={`score-chip ${cls}`}>{r.score}/{r.total} ({pct}%)</span></td>
++                    <td className="muted small">{new Date(r.created_at).toLocaleString("en-IN")}</td>
++                  </tr>
++                );
++              })}
++            </tbody>
++          </table>
++        )}
++      </section>
++    </main>
++  );
++}
+diff --git a/app/globals.css b/app/globals.css
+new file mode 100644
+index 0000000..f013841
+--- /dev/null
++++ b/app/globals.css
+@@ -0,0 +1,127 @@
++*{box-sizing:border-box;margin:0;padding:0}
++:root{--primary:#ff6b00;--dark:#111827;--muted:#667085;--light:#fff7ed;--border:#ececec;--green:#12b76a;--red:#e5484d}
++body{font-family:Inter,Arial,sans-serif;color:var(--dark);background:#fff;line-height:1.5}
++a{text-decoration:none;color:inherit}
++.container{max-width:1180px;margin:auto;padding:0 22px}
++header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid #eee}
++.nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:25px}
++.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:21px}
++.logo-mark{width:38px;height:38px;border-radius:11px;background:var(--primary);color:white;display:grid;place-items:center;font-size:22px}
++.nav-links{display:flex;gap:25px;font-size:14px;font-weight:600;color:#475467}
++.nav-actions{display:flex;gap:10px;align-items:center}
++.btn{border:0;border-radius:10px;padding:11px 17px;font-weight:800;cursor:pointer;display:inline-block}
++.btn-outline{background:#fff;border:1px solid #ddd}
++.btn-primary{background:var(--primary);color:#fff;box-shadow:0 8px 20px rgba(255,107,0,.2)}
++.btn:disabled{opacity:.6;cursor:not-allowed}
++.hero{background:linear-gradient(135deg,#fff7ed 0%,#fff 55%,#fff1e7 100%);padding:78px 0 65px;overflow:hidden}
++.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center}
++.badge{display:inline-flex;background:#fff;border:1px solid #ffd7b5;color:#d95100;padding:7px 12px;border-radius:999px;font-weight:800;font-size:13px;margin-bottom:18px}
++h1{font-size:58px;line-height:1.02;letter-spacing:-2.5px;margin-bottom:20px}
++h1 span{color:var(--primary)}
++.hero p{font-size:18px;color:var(--muted);max-width:600px;margin-bottom:28px}
++.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
++.hero-card{position:relative;background:#111827;border-radius:26px;padding:24px;color:white;box-shadow:0 25px 60px rgba(17,24,39,.2)}
++.video{height:290px;border-radius:18px;background:linear-gradient(135deg,#292f3d,#10131a);display:grid;place-items:center;position:relative;overflow:hidden}
++.video:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,.25);filter:blur(5px)}
++.play{position:relative;width:70px;height:70px;border-radius:50%;background:var(--primary);display:grid;place-items:center;font-size:27px;padding-left:4px;cursor:pointer;border:0}
++.course-mini{margin-top:18px;display:flex;justify-content:space-between;align-items:center}
++.course-mini small{color:#aab1bf}.price{font-size:22px;font-weight:900}
++.stats{padding:26px 0;border-bottom:1px solid #eee}
++.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
++.stat strong{font-size:28px}.stat span{display:block;color:var(--muted);font-size:13px}
++.section{padding:70px 0}
++.section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px}
++.section h2{font-size:34px;letter-spacing:-1px}.section-head p{color:var(--muted)}
++.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
++.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;transition:.2s;display:block}
++.card:hover{transform:translateY(-4px);box-shadow:0 14px 35px rgba(0,0,0,.08)}
++.card-top{height:145px;padding:20px;background:var(--light);display:flex;justify-content:space-between;align-items:flex-start}
++.icon{width:52px;height:52px;border-radius:14px;background:#fff;display:grid;place-items:center;font-size:27px}
++.level{font-size:12px;background:#fff;border:1px solid #eee;border-radius:20px;padding:6px 9px;font-weight:700}
++.card-body{padding:20px}.card h3{margin-bottom:8px;font-size:19px}.card p{color:var(--muted);font-size:14px;margin-bottom:17px}
++.meta{display:flex;justify-content:space-between;font-size:13px;color:#667085}
++.feature{background:#111827;color:#fff}
++.feature .section-head p{color:#b7bdc8}
++.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
++.feature-item{padding:24px;border:1px solid #2e3542;border-radius:17px;background:#181e29}
++.feature-item .ficon{font-size:28px;margin-bottom:14px}.feature-item p{color:#aeb5c0;font-size:14px;margin-top:6px}
++.cta{margin:0 0 70px;border-radius:25px;padding:45px;background:linear-gradient(120deg,#ff6b00,#ff8a32);color:white;display:flex;justify-content:space-between;align-items:center;gap:20px}
++.cta p{opacity:.9;margin-top:5px}.cta .btn{background:white;color:#d95100}
++footer{background:#0b0f15;color:#b8bec8;padding:45px 0}.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px}
++.footer-title{color:white;font-weight:800;margin-bottom:12px}.footer-links{display:grid;gap:8px;font-size:14px}
++.copyright{border-top:1px solid #252b34;margin-top:30px;padding-top:20px;font-size:13px}
++
++/* ============ added for full site ============ */
++.burger{display:none;background:none;border:1px solid #ddd;border-radius:10px;padding:9px 12px;font-size:17px;cursor:pointer}
++.mobile-menu{display:none;flex-direction:column;gap:4px;padding:10px 22px 18px;border-bottom:1px solid #eee;background:#fff}
++.mobile-menu a{padding:10px 6px;font-weight:600;font-size:15px;color:#344054;border-bottom:1px solid #f4f4f4}
++.mobile-menu.open{display:flex}
++.overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:40;display:grid;place-items:center;padding:20px}
++.modal{background:#fff;border-radius:20px;max-width:560px;width:100%;padding:28px;position:relative;max-height:92vh;overflow:auto}
++.modal-close{position:absolute;top:14px;right:14px;background:#f4f4f5;border:0;border-radius:9px;width:34px;height:34px;font-size:15px;cursor:pointer;font-weight:700}
++.modal iframe{width:100%;height:300px;border:0;border-radius:14px;margin-top:10px;background:#111827}
++.form{display:grid;gap:14px}
++.form label{font-size:13px;font-weight:700;color:#344054}
++.input{width:100%;border:1px solid #ddd;border-radius:10px;padding:11px 13px;font-size:15px;font-family:inherit}
++.input:focus{outline:2px solid rgba(255,107,0,.35);border-color:var(--primary)}
++.form-error{background:#fef2f2;border:1px solid #fecaca;color:#b42318;border-radius:10px;padding:10px 13px;font-size:14px}
++.form-success{background:#ecfdf3;border:1px solid #d1fadf;color:#067647;border-radius:10px;padding:10px 13px;font-size:14px}
++.auth-wrap{min-height:calc(100vh - 72px);display:grid;place-items:center;background:linear-gradient(135deg,#fff7ed,#fff 60%,#fff1e7);padding:40px 20px}
++.auth-card{background:#fff;border:1px solid var(--border);border-radius:22px;padding:34px;width:100%;max-width:430px;box-shadow:0 20px 50px rgba(17,24,39,.08)}
++.auth-card h1{font-size:29px;letter-spacing:-1px;margin-bottom:6px}
++.auth-card .sub{color:var(--muted);font-size:14.5px;margin-bottom:22px}
++.auth-card .alt{text-align:center;font-size:14px;color:var(--muted);margin-top:18px}
++.auth-card .alt a{color:var(--primary);font-weight:800}
++.page-head{padding:52px 0 8px}
++.page-head h1{font-size:40px;letter-spacing:-1.6px;margin-bottom:8px}
++.page-head p{color:var(--muted);font-size:16px;max-width:640px}
++.hl-list{display:grid;gap:9px;margin:16px 0 20px}
++.hl-list li{list-style:none;font-size:14.5px;color:#344054;display:flex;gap:9px;align-items:center}
++.hl-list li::before{content:"✓";color:var(--green);font-weight:900}
++.price-tag{font-size:29px;font-weight:900;letter-spacing:-1px}
++.muted{color:var(--muted)}.small{font-size:13px}
++.course-hero{display:grid;grid-template-columns:1.5fr 1fr;gap:34px;align-items:start;margin-top:26px}
++.buy-card{border:1px solid var(--border);border-radius:20px;padding:24px;box-shadow:0 14px 40px rgba(17,24,39,.07);position:sticky;top:92px}
++.test-meta{display:flex;gap:14px;font-size:13.5px;color:var(--muted);margin:4px 0 16px}
++.timer-bar{position:sticky;top:72px;z-index:15;background:#111827;color:#fff;border-radius:14px;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
++.timer-bar .time{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
++.timer-bar.warn .time{color:#ffb26b}
++.q-card{border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:14px}
++.q-card .qn{font-size:12px;font-weight:800;color:var(--primary);margin-bottom:7px}
++.opt{display:flex;gap:10px;align-items:center;border:1px solid #e5e5e5;border-radius:11px;padding:11px 14px;margin-top:9px;cursor:pointer;font-size:14.5px;transition:.15s}
++.opt:hover{border-color:var(--primary)}
++.opt.sel{border-color:var(--primary);background:var(--light);font-weight:700}
++.opt input{accent-color:var(--primary)}
++.review-opt{display:inline-block;border:1px solid #e5e5e5;border-radius:9px;padding:7px 12px;margin:5px 6px 0 0;font-size:13.5px}
++.review-opt.correct{border-color:#a6f4c5;background:#ecfdf3;font-weight:700}
++.review-opt.wrong{border-color:#fecaca;background:#fef2f2;text-decoration:line-through}
++.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:5px 11px}
++.tag.new{background:#fff7ed;color:#d95100;border:1px solid #ffd7b5}
++.tag.contacted{background:#eff8ff;color:#175cd3;border:1px solid #b2ddff}
++.tag.joined{background:#ecfdf3;color:#067647;border:1px solid #abefc6}
++.tag.closed{background:#f4f4f5;color:#475467;border:1px solid #e0e0e2}
++.stat-card{border:1px solid var(--border);border-radius:16px;padding:20px}
++.stat-card strong{font-size:24px;display:block}
++.stat-card span{color:var(--muted);font-size:13px}
++.admin-tabs{display:flex;gap:8px;margin:22px 0;flex-wrap:wrap}
++.admin-tabs button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:9px 18px;font-weight:700;font-size:13.5px;cursor:pointer}
++.admin-tabs button.active{background:#111827;color:#fff;border-color:#111827}
++table.data{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden}
++table.data th{background:#f9fafb;text-align:left;padding:12px 14px;font-size:12.5px;color:#475467;border-bottom:1px solid var(--border)}
++table.data td{padding:12px 14px;border-bottom:1px solid #f2f2f3;vertical-align:top}
++table.data tr:last-child td{border-bottom:0}
++.status-btn{border:1px solid #ddd;background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;margin:2px}
++.status-btn.active{background:#111827;color:#fff;border-color:#111827}
++.score-chip{font-weight:900;font-size:15px}
++.score-chip.good{color:var(--green)}.score-chip.mid{color:#d95100}.score-chip.bad{color:var(--red)}
++.faq-item{border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-bottom:10px}
++.faq-item summary{font-weight:800;cursor:pointer;font-size:15.5px}
++.faq-item p{color:var(--muted);font-size:14.5px;margin-top:9px}
++.nf{min-height:calc(100vh - 72px);display:grid;place-items:center;text-align:center;padding:50px 20px;background:linear-gradient(135deg,#fff7ed,#fff 60%,#fff1e7)}
++.nf-code{font-size:92px;font-weight:900;letter-spacing:-4px;color:var(--primary);line-height:1}
++.nf h1{font-size:30px;margin:10px 0 8px}
++.nf p{color:var(--muted);margin-bottom:26px}
++.prose p{color:#475467;font-size:15px;margin-bottom:14px}
++.prose h3{margin:22px 0 8px;font-size:18px}
++@media(max-width:850px){.nav-links{display:none}.burger{display:block}.hero-grid{grid-template-columns:1fr}.hero{padding-top:55px}h1{font-size:45px}.grid,.feature-grid{grid-template-columns:1fr 1fr}.stats-grid{grid-template-columns:repeat(2,1fr);gap:25px}.footer-grid{grid-template-columns:1fr 1fr}.cta{display:block}.cta .btn{margin-top:20px}.course-hero{grid-template-columns:1fr}.buy-card{position:static}}
++@media(max-width:550px){.nav-actions .btn-outline{display:none}.grid,.feature-grid{grid-template-columns:1fr}.section{padding:52px 0}.section-head{display:block}.section-head p{margin-top:8px}.hero-card{margin-top:10px}.video{height:230px}.footer-grid{grid-template-columns:1fr}h1{font-size:39px}.page-head h1{font-size:31px}}
+diff --git a/app/icon.svg b/app/icon.svg
+new file mode 100644
+index 0000000..8eda721
+--- /dev/null
++++ b/app/icon.svg
+@@ -0,0 +1,4 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
++  <rect width="64" height="64" rx="16" fill="#ff6b00"/>
++  <text x="32" y="45" font-family="Arial, sans-serif" font-size="38" font-weight="900" fill="#fff" text-anchor="middle">A</text>
++</svg>
+diff --git a/app/layout.tsx b/app/layout.tsx
+new file mode 100644
+index 0000000..104983e
+--- /dev/null
++++ b/app/layout.tsx
+@@ -0,0 +1,62 @@
++import type { Metadata, Viewport } from "next";
++import "./globals.css";
++import Header from "@/components/Header";
++import Footer from "@/components/Footer";
++
++const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app";
++
++export const metadata: Metadata = {
++  metadataBase: new URL(SITE),
++  title: {
++    default: "Alpha Classes — Coaching Institute | Live Classes, Test Series & Study Material",
++    template: "%s | Alpha Classes",
++  },
++  description:
++    "Alpha Classes — live and recorded classes for Class 9–10, JEE, NEET, SSC and skill courses. Expert teachers, smart tests, structured study material and doubt support. Learn Today. Lead Tomorrow.",
++  keywords: [
++    "Alpha Classes", "coaching institute", "JEE coaching", "NEET coaching", "SSC exam preparation",
++    "Class 10 foundation course", "online coaching classes", "test series", "web development course",
++  ],
++  openGraph: {
++    type: "website",
++    siteName: "Alpha Classes",
++    title: "Alpha Classes — Learn Today. Lead Tomorrow.",
++    description: "Live classes, expert teachers, smart tests and structured study material — everything students need in one place.",
++    url: SITE,
++  },
++  twitter: {
++    card: "summary_large_image",
++    title: "Alpha Classes — Learn Today. Lead Tomorrow.",
++    description: "Live classes, expert teachers, smart tests and structured study material — everything students need in one place.",
++  },
++  robots: { index: true, follow: true },
++  alternates: { canonical: SITE },
++};
++
++export const viewport: Viewport = {
++  themeColor: "#ff6b00",
++  width: "device-width",
++  initialScale: 1,
++};
++
++const orgJsonLd = {
++  "@context": "https://schema.org",
++  "@type": "EducationalOrganization",
++  name: "Alpha Classes",
++  url: SITE,
++  slogan: "Learn Today. Lead Tomorrow.",
++  description: "Coaching institute offering live and recorded classes, test series and study material for school, competitive and skill-based exams.",
++};
++
++export default function RootLayout({ children }: { children: React.ReactNode }) {
++  return (
++    <html lang="en">
++      <body>
++        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
++        <Header />
++        {children}
++        <Footer />
++      </body>
++    </html>
++  );
++}
+diff --git a/app/login/page.tsx b/app/login/page.tsx
+new file mode 100644
+index 0000000..211bed9
+--- /dev/null
++++ b/app/login/page.tsx
+@@ -0,0 +1,65 @@
++"use client";
++
++import Link from "next/link";
++import { useRouter, useSearchParams } from "next/navigation";
++import { Suspense, useState } from "react";
++
++function LoginForm() {
++  const router = useRouter();
++  const search = useSearchParams();
++  const next = search.get("next") || "/dashboard";
++  const [email, setEmail] = useState("");
++  const [password, setPassword] = useState("");
++  const [error, setError] = useState("");
++  const [loading, setLoading] = useState(false);
++
++  async function submit(e: React.FormEvent) {
++    e.preventDefault();
++    setLoading(true);
++    setError("");
++    try {
++      const res = await fetch("/api/auth/login", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ email, password }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Login failed.");
++      router.push(next);
++      router.refresh();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : "Login failed.");
++      setLoading(false);
++    }
++  }
++
++  return (
++    <div className="auth-wrap">
++      <div className="auth-card">
++        <h1>Welcome back 👋</h1>
++        <p className="sub">Log in to access your courses and tests.</p>
++        <form className="form" onSubmit={submit}>
++          <div>
++            <label htmlFor="li-email">Email</label>
++            <input id="li-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@email.com" />
++          </div>
++          <div>
++            <label htmlFor="li-pass">Password</label>
++            <input id="li-pass" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Your password" />
++          </div>
++          {error && <div className="form-error">{error}</div>}
++          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Logging in…" : "Login"}</button>
++        </form>
++        <p className="alt">New to Alpha Classes? <Link href="/signup">Create a free account</Link></p>
++      </div>
++    </div>
++  );
++}
++
++export default function LoginPage() {
++  return (
++    <Suspense>
++      <LoginForm />
++    </Suspense>
++  );
++}
+diff --git a/app/manifest.ts b/app/manifest.ts
+new file mode 100644
+index 0000000..15e8e29
+--- /dev/null
++++ b/app/manifest.ts
+@@ -0,0 +1,14 @@
++import type { MetadataRoute } from "next";
++
++export default function manifest(): MetadataRoute.Manifest {
++  return {
++    name: "Alpha Classes — Learn Today. Lead Tomorrow.",
++    short_name: "Alpha Classes",
++    description: "Live classes, test series and study material for Class 9–10, JEE, NEET, SSC and skill courses.",
++    start_url: "/",
++    display: "standalone",
++    background_color: "#ffffff",
++    theme_color: "#ff6b00",
++    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
++  };
++}
+diff --git a/app/not-found.tsx b/app/not-found.tsx
+new file mode 100644
+index 0000000..764a276
+--- /dev/null
++++ b/app/not-found.tsx
+@@ -0,0 +1,17 @@
++import Link from "next/link";
++
++export default function NotFound() {
++  return (
++    <main className="nf">
++      <div>
++        <div className="nf-code">404</div>
++        <h1>This page bunked class! 🙈</h1>
++        <p>The page you are looking for doesn&apos;t exist or has moved. Let&apos;s get you back to learning.</p>
++        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
++          <Link className="btn btn-primary" href="/">← Back to Home</Link>
++          <Link className="btn btn-outline" href="/courses">Browse Courses</Link>
++        </div>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/opengraph-image.tsx b/app/opengraph-image.tsx
+new file mode 100644
+index 0000000..d4fc219
+--- /dev/null
++++ b/app/opengraph-image.tsx
+@@ -0,0 +1,55 @@
++import { ImageResponse } from "next/og";
++
++export const runtime = "edge";
++export const size = { width: 1200, height: 630 };
++export const contentType = "image/png";
++
++export default function OpengraphImage() {
++  return new ImageResponse(
++    (
++      <div
++        style={{
++          width: "100%",
++          height: "100%",
++          display: "flex",
++          flexDirection: "column",
++          alignItems: "flex-start",
++          justifyContent: "center",
++          background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
++          padding: 80,
++          fontFamily: "sans-serif",
++        }}
++      >
++        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
++          <div
++            style={{
++              width: 76,
++              height: 76,
++              borderRadius: 20,
++              background: "#ff6b00",
++              color: "#fff",
++              display: "flex",
++              alignItems: "center",
++              justifyContent: "center",
++              fontSize: 44,
++              fontWeight: 900,
++            }}
++          >
++            A
++          </div>
++          <div style={{ color: "#fff", fontSize: 34, fontWeight: 800, letterSpacing: 1 }}>ALPHA CLASSES</div>
++        </div>
++        <div style={{ color: "#fff", fontSize: 68, fontWeight: 900, marginTop: 40, lineHeight: 1.1, letterSpacing: -2 }}>
++          Learn Today.
++        </div>
++        <div style={{ color: "#ff6b00", fontSize: 68, fontWeight: 900, lineHeight: 1.1, letterSpacing: -2 }}>
++          Lead Tomorrow.
++        </div>
++        <div style={{ color: "#9aa3b2", fontSize: 26, marginTop: 34 }}>
++          Live classes · Test series · Study material · Doubt support
++        </div>
++      </div>
++    ),
++    size
++  );
++}
+diff --git a/app/page.tsx b/app/page.tsx
+new file mode 100644
+index 0000000..d8eacda
+--- /dev/null
++++ b/app/page.tsx
+@@ -0,0 +1,116 @@
++import Link from "next/link";
++import type { Metadata } from "next";
++import { getCourses, getTests } from "@/lib/db";
++import DemoModal from "@/components/DemoModal";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "Alpha Classes — Learn Today. Lead Tomorrow.",
++  description:
++    "Live classes, expert teachers, smart tests and structured study material — everything students need in one place. Courses for Class 9–10, JEE, NEET, SSC and skills.",
++  alternates: { canonical: "/" },
++};
++
++export default async function Home() {
++  const [courses, tests] = await Promise.all([getCourses(), getTests()]);
++  const featured = courses.find((c) => c.featured) || courses[0];
++
++  return (
++    <main>
++      <section className="hero">
++        <div className="container hero-grid">
++          <div>
++            <div className="badge">🚀 New-age learning platform</div>
++            <h1>Learn Today.<br /><span>Lead Tomorrow.</span></h1>
++            <p>Live classes, expert teachers, smart tests and structured study material — everything students need in one place.</p>
++            <div className="hero-buttons">
++              <Link className="btn btn-primary" href="/courses">Explore Courses →</Link>
++              <DemoModal />
++            </div>
++          </div>
++          <div className="hero-card">
++            <div className="video"><DemoModal variant="play" /></div>
++            <div className="course-mini">
++              <div><small>Featured Course</small><br /><strong>{featured ? featured.title : "Complete JEE Foundation"}</strong></div>
++              <div className="price">₹{featured ? featured.price : 999}</div>
++            </div>
++          </div>
++        </div>
++      </section>
++
++      <section className="stats"><div className="container stats-grid">
++        <div className="stat"><strong>50K+</strong><span>Students Learning</span></div>
++        <div className="stat"><strong>120+</strong><span>Expert Teachers</span></div>
++        <div className="stat"><strong>500+</strong><span>Video Classes</span></div>
++        <div className="stat"><strong>95%</strong><span>Student Satisfaction</span></div>
++      </div></section>
++
++      <section className="section" id="courses">
++        <div className="container">
++          <div className="section-head">
++            <div><h2>Popular Courses</h2><p>Choose a path and start learning.</p></div>
++            <Link href="/courses" style={{ color: "#f56600", fontWeight: 800 }}>View all →</Link>
++          </div>
++          <div className="grid">
++            {courses.map((c) => (
++              <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
++                <div className="card-top"><div className="icon">{c.icon}</div><span className="level">{c.level}</span></div>
++                <div className="card-body">
++                  <h3>{c.title}</h3>
++                  <p>{c.description}</p>
++                  <div className="meta"><span>{c.classes_count} Classes</span><b>₹{c.price.toLocaleString("en-IN")}</b></div>
++                </div>
++              </Link>
++            ))}
++          </div>
++        </div>
++      </section>
++
++      <section className="section feature" id="features">
++        <div className="container">
++          <div className="section-head">
++            <div><h2>Everything you need to learn</h2><p>Designed for focused, consistent progress.</p></div>
++          </div>
++          <div className="feature-grid">
++            <div className="feature-item"><div className="ficon">🎥</div><h3>Live + Recorded</h3><p>Attend live sessions or learn at your own pace.</p></div>
++            <div className="feature-item"><div className="ficon">📄</div><h3>Smart Study Material</h3><p>Notes, PDFs, practice sheets and revision resources.</p></div>
++            <div className="feature-item"><div className="ficon">🧪</div><h3>Test Series</h3><p>Practice with timed tests and detailed results.</p></div>
++            <div className="feature-item"><div className="ficon">📊</div><h3>Performance Tracking</h3><p>See your progress, scores and learning streak.</p></div>
++            <div className="feature-item"><div className="ficon">👨‍🏫</div><h3>Doubt Support</h3><p>Ask questions and get help when you are stuck.</p></div>
++            <div className="feature-item"><div className="ficon">📱</div><h3>Learn Anywhere</h3><p>Responsive experience for desktop, tablet and mobile.</p></div>
++          </div>
++        </div>
++      </section>
++
++      <section className="section" id="tests">
++        <div className="container">
++          <div className="section-head">
++            <div><h2>Test Series</h2><p>Practice. Analyze. Improve.</p></div>
++          </div>
++          <div className="grid">
++            {tests.map((t) => (
++              <article key={t.id} className="card">
++                <div className="card-body">
++                  <h3>{t.title}</h3>
++                  <p>{t.question_count} questions · {t.duration_min} minutes · Instant result</p>
++                  <Link className="btn btn-primary" href={`/tests/${t.slug}`}>Start Test</Link>
++                </div>
++              </article>
++            ))}
++          </div>
++        </div>
++      </section>
++
++      <div className="container">
++        <section className="cta" id="about">
++          <div>
++            <h2>Ready to start your Alpha journey?</h2>
++            <p>Join thousands of learners building their future.</p>
++          </div>
++          <Link className="btn" href="/signup">Create Free Account</Link>
++        </section>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/privacy/page.tsx b/app/privacy/page.tsx
+new file mode 100644
+index 0000000..2e4927b
+--- /dev/null
++++ b/app/privacy/page.tsx
+@@ -0,0 +1,29 @@
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Privacy Policy",
++  description: "How Alpha Classes collects, uses and protects your personal information.",
++  alternates: { canonical: "/privacy" },
++};
++
++export default function PrivacyPage() {
++  return (
++    <main className="container">
++      <div className="page-head"><h1>Privacy Policy</h1><p>Last updated: {new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long" })}</p></div>
++      <section className="section prose" style={{ paddingTop: 26, maxWidth: 760 }}>
++        <h3>What we collect</h3>
++        <p>When you create an account or send an enquiry, we collect your name, email address and mobile number. When you attempt a test, we store your answers and scores so you can track progress.</p>
++        <h3>How we use it</h3>
++        <p>We use your details only to provide the learning platform — managing your account, showing your course progress and test results, and responding to your enquiries. We do not sell your data to anyone.</p>
++        <h3>Cookies</h3>
++        <p>We use a single login cookie to keep you signed in. It contains no personal data besides your session, and you can clear it any time by logging out.</p>
++        <h3>Security</h3>
++        <p>Passwords are stored only as secure hashes, never in plain text. Data is stored in a managed database with encryption in transit.</p>
++        <h3>Your choices</h3>
++        <p>You can request deletion of your account and data any time by contacting us through the contact page.</p>
++        <h3>Contact</h3>
++        <p>Questions about this policy? Reach us from the contact page.</p>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/robots.ts b/app/robots.ts
+new file mode 100644
+index 0000000..08b05a7
+--- /dev/null
++++ b/app/robots.ts
+@@ -0,0 +1,15 @@
++import type { MetadataRoute } from "next";
++
++export default function robots(): MetadataRoute.Robots {
++  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app";
++  return {
++    rules: [
++      {
++        userAgent: "*",
++        allow: "/",
++        disallow: ["/admin", "/dashboard", "/api/"],
++      },
++    ],
++    sitemap: `${site}/sitemap.xml`,
++  };
++}
+diff --git a/app/signup/page.tsx b/app/signup/page.tsx
+new file mode 100644
+index 0000000..11cfdcc
+--- /dev/null
++++ b/app/signup/page.tsx
+@@ -0,0 +1,74 @@
++"use client";
++
++import Link from "next/link";
++import { useRouter, useSearchParams } from "next/navigation";
++import { Suspense, useState } from "react";
++
++function SignupForm() {
++  const router = useRouter();
++  const search = useSearchParams();
++  const next = search.get("next") || "/dashboard";
++  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
++  const [error, setError] = useState("");
++  const [loading, setLoading] = useState(false);
++
++  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
++
++  async function submit(e: React.FormEvent) {
++    e.preventDefault();
++    setLoading(true);
++    setError("");
++    try {
++      const res = await fetch("/api/auth/signup", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify(form),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Signup failed.");
++      router.push(next);
++      router.refresh();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : "Signup failed.");
++      setLoading(false);
++    }
++  }
++
++  return (
++    <div className="auth-wrap">
++      <div className="auth-card">
++        <h1>Create your free account 🚀</h1>
++        <p className="sub">Join Alpha Classes — take free tests and track your progress.</p>
++        <form className="form" onSubmit={submit}>
++          <div>
++            <label htmlFor="su-name">Full name</label>
++            <input id="su-name" className="input" value={form.name} onChange={set("name")} required placeholder="Your full name" />
++          </div>
++          <div>
++            <label htmlFor="su-email">Email</label>
++            <input id="su-email" className="input" type="email" value={form.email} onChange={set("email")} required placeholder="you@email.com" />
++          </div>
++          <div>
++            <label htmlFor="su-phone">Mobile number</label>
++            <input id="su-phone" className="input" value={form.phone} onChange={set("phone")} placeholder="10-digit mobile (optional)" inputMode="numeric" />
++          </div>
++          <div>
++            <label htmlFor="su-pass">Password</label>
++            <input id="su-pass" className="input" type="password" value={form.password} onChange={set("password")} required placeholder="At least 6 characters" minLength={6} />
++          </div>
++          {error && <div className="form-error">{error}</div>}
++          <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Creating account…" : "Create Free Account"}</button>
++        </form>
++        <p className="alt">Already have an account? <Link href="/login">Login</Link></p>
++      </div>
++    </div>
++  );
++}
++
++export default function SignupPage() {
++  return (
++    <Suspense>
++      <SignupForm />
++    </Suspense>
++  );
++}
+diff --git a/app/sitemap.ts b/app/sitemap.ts
+new file mode 100644
+index 0000000..d303cd3
+--- /dev/null
++++ b/app/sitemap.ts
+@@ -0,0 +1,30 @@
++import type { MetadataRoute } from "next";
++import { getCourses, getTests } from "@/lib/db";
++
++export const dynamic = "force-dynamic";
++
++export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
++  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app";
++
++  let courseUrls: MetadataRoute.Sitemap = [];
++  let testUrls: MetadataRoute.Sitemap = [];
++  try {
++    const [courses, tests] = await Promise.all([getCourses(), getTests()]);
++    courseUrls = courses.map((c) => ({ url: `${site}/courses/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.8 }));
++    testUrls = tests.map((t) => ({ url: `${site}/tests/${t.slug}`, changeFrequency: "weekly" as const, priority: 0.6 }));
++  } catch {
++    // database not reachable at generation time — static URLs still ship
++  }
++
++  return [
++    { url: site, changeFrequency: "weekly", priority: 1 },
++    { url: `${site}/courses`, changeFrequency: "weekly", priority: 0.9 },
++    { url: `${site}/tests`, changeFrequency: "weekly", priority: 0.8 },
++    { url: `${site}/about`, changeFrequency: "monthly", priority: 0.5 },
++    { url: `${site}/contact`, changeFrequency: "monthly", priority: 0.7 },
++    { url: `${site}/privacy`, changeFrequency: "yearly", priority: 0.2 },
++    { url: `${site}/terms`, changeFrequency: "yearly", priority: 0.2 },
++    ...courseUrls,
++    ...testUrls,
++  ];
++}
+diff --git a/app/terms/page.tsx b/app/terms/page.tsx
+new file mode 100644
+index 0000000..265095f
+--- /dev/null
++++ b/app/terms/page.tsx
+@@ -0,0 +1,25 @@
++import type { Metadata } from "next";
++
++export const metadata: Metadata = {
++  title: "Terms of Use",
++  description: "Terms and conditions for using the Alpha Classes learning platform.",
++  alternates: { canonical: "/terms" },
++};
++
++export default function TermsPage() {
++  return (
++    <main className="container">
++      <div className="page-head"><h1>Terms of Use</h1><p>Last updated: {new Date().toLocaleDateString("en-IN", { year: "numeric", month: "long" })}</p></div>
++      <section className="section prose" style={{ paddingTop: 26, maxWidth: 760 }}>
++        <h3>Using the platform</h3>
++        <p>By creating an account you agree to use Alpha Classes for personal learning only. Sharing account credentials or misusing the platform (including attempting to cheat in tests) may lead to account suspension.</p>
++        <h3>Courses & payments</h3>
++        <p>Course fees, batch timings and refunds are governed by the admission terms shared at the time of enrolment. Online practice tests on this website are free for registered students.</p>
++        <h3>Content</h3>
++        <p>Notes, videos, questions and other material on this platform are for enrolled students only. Redistribution or reproduction without permission is not allowed.</p>
++        <h3>Changes</h3>
++        <p>We may update these terms from time to time. Continued use of the platform after changes means you accept the updated terms.</p>
++      </section>
++    </main>
++  );
++}
+diff --git a/app/tests/[slug]/page.tsx b/app/tests/[slug]/page.tsx
+new file mode 100644
+index 0000000..77b982f
+--- /dev/null
++++ b/app/tests/[slug]/page.tsx
+@@ -0,0 +1,44 @@
++import Link from "next/link";
++import { notFound } from "next/navigation";
++import type { Metadata } from "next";
++import { getTestWithQuestions } from "@/lib/db";
++import { getSession } from "@/lib/auth";
++import TestRunner from "@/components/TestRunner";
++
++export const dynamic = "force-dynamic";
++
++type Props = { params: { slug: string } };
++
++export async function generateMetadata({ params }: Props): Promise<Metadata> {
++  const data = await getTestWithQuestions(params.slug);
++  if (!data) return { title: "Test Not Found" };
++  return {
++    title: `${data.test.title} — Free Online Practice Test`,
++    description: `${data.test.description} ${data.questions.length} questions, ${data.test.duration_min} minutes, instant result with answer review.`,
++    alternates: { canonical: `/tests/${data.test.slug}` },
++  };
++}
++
++export default async function TestPage({ params }: Props) {
++  const data = await getTestWithQuestions(params.slug);
++  if (!data) notFound();
++
++  const session = await getSession();
++  // never send correct answers to the browser before submission
++  const questions = data.questions.map((q) => ({ id: q.id, q_text: q.q_text, options: q.options }));
++
++  return (
++    <main className="container section" style={{ paddingTop: 40 }}>
++      {!session && (
++        <div className="form-error" style={{ marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
++          <span>🔒 You need a free account to attempt this test — your score will be saved to your dashboard.</span>
++          <span style={{ display: "flex", gap: 8 }}>
++            <Link className="btn btn-primary" href={`/login?next=/tests/${params.slug}`}>Login</Link>
++            <Link className="btn btn-outline" href={`/signup?next=/tests/${params.slug}`} style={{ background: "#fff" }}>Sign Up Free</Link>
++          </span>
++        </div>
++      )}
++      <TestRunner slug={params.slug} title={data.test.title} durationMin={data.test.duration_min} questions={questions} />
++    </main>
++  );
++}
+diff --git a/app/tests/page.tsx b/app/tests/page.tsx
+new file mode 100644
+index 0000000..b3745b7
+--- /dev/null
++++ b/app/tests/page.tsx
+@@ -0,0 +1,37 @@
++import Link from "next/link";
++import type { Metadata } from "next";
++import { getTests } from "@/lib/db";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "Test Series — Free Online Practice Tests",
++  description: "Practice with timed online tests for Class 10 Science, JEE and SSC. Instant results, question-wise analysis and score tracking at Alpha Classes.",
++  alternates: { canonical: "/tests" },
++};
++
++export default async function TestsPage() {
++  const tests = await getTests();
++  return (
++    <main className="container">
++      <div className="page-head">
++        <h1>Test Series</h1>
++        <p>Practice. Analyze. Improve. Timed tests with instant results — free for registered students.</p>
++      </div>
++      <section className="section" style={{ paddingTop: 30 }}>
++        <div className="grid">
++          {tests.map((t) => (
++            <article key={t.id} className="card">
++              <div className="card-body">
++                <h3>{t.title}</h3>
++                <p>{t.description}</p>
++                <div className="meta" style={{ marginBottom: 14 }}><span>{t.question_count} questions · {t.duration_min} min</span></div>
++                <Link className="btn btn-primary" href={`/tests/${t.slug}`}>Start Test</Link>
++              </div>
++            </article>
++          ))}
++        </div>
++      </section>
++    </main>
++  );
++}
+diff --git a/components/AdminLogin.tsx b/components/AdminLogin.tsx
+new file mode 100644
+index 0000000..32c3356
+--- /dev/null
++++ b/components/AdminLogin.tsx
+@@ -0,0 +1,47 @@
++"use client";
++
++import { useState } from "react";
++
++export default function AdminLogin() {
++  const [password, setPassword] = useState("");
++  const [error, setError] = useState("");
++  const [loading, setLoading] = useState(false);
++
++  async function submit(e: React.FormEvent) {
++    e.preventDefault();
++    setLoading(true);
++    setError("");
++    try {
++      const res = await fetch("/api/admin/login", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ password }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Login failed.");
++      window.location.reload();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : "Login failed.");
++      setLoading(false);
++    }
++  }
++
++  return (
++    <main>
++      <div className="auth-wrap">
++        <div className="auth-card">
++          <h1>🔐 Admin Login</h1>
++          <p className="sub">Restricted area — Alpha Classes staff only.</p>
++          <form className="form" onSubmit={submit}>
++            <div>
++              <label htmlFor="ad-pass">Admin password</label>
++              <input id="ad-pass" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="Admin password" />
++            </div>
++            {error && <div className="form-error">{error}</div>}
++            <button className="btn btn-primary" type="submit" disabled={loading}>{loading ? "Checking…" : "Login"}</button>
++          </form>
++        </div>
++      </div>
++    </main>
++  );
++}
+diff --git a/components/AdminLogout.tsx b/components/AdminLogout.tsx
+new file mode 100644
+index 0000000..818291f
+--- /dev/null
++++ b/components/AdminLogout.tsx
+@@ -0,0 +1,11 @@
++"use client";
++
++export default function AdminLogout() {
++  async function logout() {
++    await fetch("/api/admin/logout", { method: "POST" });
++    window.location.reload();
++  }
++  return (
++    <button className="btn btn-outline" onClick={logout}>Logout</button>
++  );
++}
+diff --git a/components/AdminPanel.tsx b/components/AdminPanel.tsx
+new file mode 100644
+index 0000000..6e0af4c
+--- /dev/null
++++ b/components/AdminPanel.tsx
+@@ -0,0 +1,105 @@
++"use client";
++
++import { useRouter } from "next/navigation";
++import { useState } from "react";
++
++export type Enquiry = { id: number; name: string; email: string; phone: string; message: string; status: string; created_at: string; course: string | null };
++export type Student = { id: number; name: string; email: string; phone: string; created_at: string };
++export type ResultRow = { id: number; student: string; test: string; score: number; total: number; created_at: string };
++export type AdminData = { enquiries: Enquiry[]; students: Student[]; results: ResultRow[] };
++
++const STATUSES = ["new", "contacted", "joined", "closed"] as const;
++
++export default function AdminPanel({ data }: { data: AdminData }) {
++  const router = useRouter();
++  const [tab, setTab] = useState<"enquiries" | "students" | "results">("enquiries");
++  const [busy, setBusy] = useState<number | null>(null);
++
++  async function setStatus(id: number, status: string) {
++    setBusy(id);
++    await fetch(`/api/admin/enquiries/${id}`, {
++      method: "PATCH",
++      headers: { "Content-Type": "application/json" },
++      body: JSON.stringify({ status }),
++    });
++    setBusy(null);
++    router.refresh();
++  }
++
++  const counts = { new: data.enquiries.filter((e) => e.status === "new").length };
++
++  return (
++    <div>
++      <div className="admin-tabs">
++        <button className={tab === "enquiries" ? "active" : ""} onClick={() => setTab("enquiries")}>
++          Enquiries ({data.enquiries.length}{counts.new > 0 ? ` · ${counts.new} new` : ""})
++        </button>
++        <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>Students ({data.students.length})</button>
++        <button className={tab === "results" ? "active" : ""} onClick={() => setTab("results")}>Test Results ({data.results.length})</button>
++      </div>
++
++      {tab === "enquiries" && (
++        data.enquiries.length === 0 ? <p className="muted">No enquiries yet.</p> :
++        <table className="data">
++          <thead><tr><th>Name / Contact</th><th>Course</th><th>Message</th><th>Status</th><th>Received</th></tr></thead>
++          <tbody>
++            {data.enquiries.map((e) => (
++              <tr key={e.id} style={{ opacity: busy === e.id ? 0.5 : 1 }}>
++                <td><b>{e.name}</b><br /><span className="small muted">{e.email}<br />📞 {e.phone}</span></td>
++                <td className="small">{e.course || "—"}</td>
++                <td className="small" style={{ maxWidth: 220 }}>{e.message || "—"}</td>
++                <td>
++                  <span className={`tag ${e.status}`}>{e.status}</span>
++                  <div style={{ marginTop: 6 }}>
++                    {STATUSES.filter((s) => s !== e.status).map((s) => (
++                      <button key={s} className="status-btn" onClick={() => setStatus(e.id, s)} disabled={busy === e.id}>{s}</button>
++                    ))}
++                  </div>
++                </td>
++                <td className="small muted">{new Date(e.created_at).toLocaleString("en-IN")}</td>
++              </tr>
++            ))}
++          </tbody>
++        </table>
++      )}
++
++      {tab === "students" && (
++        data.students.length === 0 ? <p className="muted">No students yet.</p> :
++        <table className="data">
++          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th></tr></thead>
++          <tbody>
++            {data.students.map((s) => (
++              <tr key={s.id}>
++                <td><b>{s.name}</b></td>
++                <td>{s.email}</td>
++                <td>{s.phone || "—"}</td>
++                <td className="small muted">{new Date(s.created_at).toLocaleDateString("en-IN")}</td>
++              </tr>
++            ))}
++          </tbody>
++        </table>
++      )}
++
++      {tab === "results" && (
++        data.results.length === 0 ? <p className="muted">No test results yet.</p> :
++        <table className="data">
++          <thead><tr><th>Student</th><th>Test</th><th>Score</th><th>When</th></tr></thead>
++          <tbody>
++            {data.results.map((r) => {
++              const pct = Math.round((r.score / r.total) * 100);
++              const cls = pct >= 70 ? "good" : pct >= 40 ? "mid" : "bad";
++              return (
++                <tr key={r.id}>
++                  <td><b>{r.student}</b></td>
++                  <td>{r.test}</td>
++                  <td><span className={`score-chip ${cls}`}>{r.score}/{r.total} ({pct}%)</span></td>
++                  <td className="small muted">{new Date(r.created_at).toLocaleString("en-IN")}</td>
++                </tr>
++              );
++            })}
++          </tbody>
++        </table>
++      )}
++    </div>
++  );
++}
+diff --git a/components/DemoModal.tsx b/components/DemoModal.tsx
+new file mode 100644
+index 0000000..210d92e
+--- /dev/null
++++ b/components/DemoModal.tsx
+@@ -0,0 +1,44 @@
++"use client";
++
++import Link from "next/link";
++import { useState } from "react";
++
++export default function DemoModal({ variant = "button" }: { variant?: "button" | "play" }) {
++  const [open, setOpen] = useState(false);
++  const videoId = process.env.NEXT_PUBLIC_DEMO_VIDEO_ID;
++
++  return (
++    <>
++      {variant === "play" ? (
++        <button className="play" onClick={() => setOpen(true)} aria-label="Watch demo video">▶</button>
++      ) : (
++        <button className="btn btn-outline" onClick={() => setOpen(true)}>▶ Watch Demo</button>
++      )}
++      {open && (
++        <div className="overlay" onClick={() => setOpen(false)}>
++          <div className="modal" onClick={(e) => e.stopPropagation()}>
++            <button className="modal-close" onClick={() => setOpen(false)} aria-label="Close">✕</button>
++            <h2 style={{ fontSize: 21, letterSpacing: -0.5 }}>Watch a demo class</h2>
++            <p className="muted" style={{ fontSize: 14 }}>See how Alpha Classes teaches — live concepts, practice and doubt solving.</p>
++            {videoId ? (
++              <iframe
++                src={`https://www.youtube.com/embed/${videoId}`}
++                title="Alpha Classes demo"
++                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
++                allowFullScreen
++              />
++            ) : (
++              <div style={{ background: "#111827", borderRadius: 14, padding: "40px 24px", textAlign: "center", margin: "12px 0" }}>
++                <div style={{ fontSize: 34 }}>🎬</div>
++                <p style={{ color: "#c7cdd8", fontSize: 14.5, margin: "8px 0 16px" }}>
++                  Demo video is coming soon. Until then, book a free live demo class with our teachers.
++                </p>
++                <Link href="/contact" className="btn btn-primary">Book Free Demo Class</Link>
++              </div>
++            )}
++          </div>
++        </div>
++      )}
++    </>
++  );
++}
+diff --git a/components/EnquiryForm.tsx b/components/EnquiryForm.tsx
+new file mode 100644
+index 0000000..553e113
+--- /dev/null
++++ b/components/EnquiryForm.tsx
+@@ -0,0 +1,68 @@
++"use client";
++
++import { useState } from "react";
++
++export default function EnquiryForm({ courseId, courseTitle }: { courseId?: number; courseTitle?: string }) {
++  const [name, setName] = useState("");
++  const [email, setEmail] = useState("");
++  const [phone, setPhone] = useState("");
++  const [message, setMessage] = useState("");
++  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
++  const [error, setError] = useState("");
++
++  async function submit(e: React.FormEvent) {
++    e.preventDefault();
++    setStatus("loading");
++    setError("");
++    try {
++      const res = await fetch("/api/enquiries", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ name, email, phone, message, courseId }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Could not send.");
++      setStatus("done");
++    } catch (err) {
++      setError(err instanceof Error ? err.message : "Could not send.");
++      setStatus("error");
++    }
++  }
++
++  if (status === "done") {
++    return (
++      <div className="form-success">
++        ✓ Thank you! Your enquiry has been received{courseTitle ? ` for ${courseTitle}` : ""}. Our team will contact you soon.
++      </div>
++    );
++  }
++
++  return (
++    <form className="form" onSubmit={submit} style={{ maxWidth: 560 }}>
++      <div>
++        <label htmlFor="eq-name">Your name</label>
++        <input id="eq-name" className="input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Full name" />
++      </div>
++      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
++        <div>
++          <label htmlFor="eq-email">Email</label>
++          <input id="eq-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@email.com" />
++        </div>
++        <div>
++          <label htmlFor="eq-phone">Mobile number</label>
++          <input id="eq-phone" className="input" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="10-digit mobile" inputMode="numeric" />
++        </div>
++      </div>
++      <div>
++        <label htmlFor="eq-msg">Message (optional)</label>
++        <textarea id="eq-msg" className="input" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} placeholder={courseTitle ? `I want to know more about ${courseTitle}…` : "How can we help you?"} />
++      </div>
++      {error && <div className="form-error">{error}</div>}
++      <div>
++        <button className="btn btn-primary" type="submit" disabled={status === "loading"}>
++          {status === "loading" ? "Sending…" : "Send Enquiry"}
++        </button>
++      </div>
++    </form>
++  );
++}
+diff --git a/components/EnrollButton.tsx b/components/EnrollButton.tsx
+new file mode 100644
+index 0000000..afcbcaf
+--- /dev/null
++++ b/components/EnrollButton.tsx
+@@ -0,0 +1,58 @@
++"use client";
++
++import Link from "next/link";
++import { useRouter } from "next/navigation";
++import { useState } from "react";
++
++export default function EnrollButton({ courseId, loggedIn, alreadyEnrolled }: { courseId: number; loggedIn: boolean; alreadyEnrolled: boolean }) {
++  const router = useRouter();
++  const [enrolled, setEnrolled] = useState(alreadyEnrolled);
++  const [loading, setLoading] = useState(false);
++  const [err, setErr] = useState("");
++
++  if (!loggedIn) {
++    return (
++      <Link className="btn btn-primary" href="/login" style={{ display: "block", textAlign: "center" }}>
++        Login to Enroll
++      </Link>
++    );
++  }
++
++  if (enrolled) {
++    return (
++      <div>
++        <span className="form-success" style={{ display: "block", textAlign: "center" }}>✓ Enrolled</span>
++        <Link className="btn btn-outline" href="/dashboard" style={{ display: "block", textAlign: "center", marginTop: 8 }}>Go to Dashboard</Link>
++      </div>
++    );
++  }
++
++  async function enroll() {
++    setLoading(true);
++    setErr("");
++    try {
++      const res = await fetch("/api/enroll", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ courseId }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Could not enroll.");
++      setEnrolled(true);
++      router.refresh();
++    } catch (e) {
++      setErr(e instanceof Error ? e.message : "Could not enroll.");
++    } finally {
++      setLoading(false);
++    }
++  }
++
++  return (
++    <div>
++      <button className="btn btn-primary" style={{ width: "100%" }} onClick={enroll} disabled={loading}>
++        {loading ? "Enrolling…" : "Enroll Now — Free"}
++      </button>
++      {err && <p className="form-error" style={{ marginTop: 8 }}>{err}</p>}
++    </div>
++  );
++}
+diff --git a/components/Footer.tsx b/components/Footer.tsx
+new file mode 100644
+index 0000000..a864e28
+--- /dev/null
++++ b/components/Footer.tsx
+@@ -0,0 +1,41 @@
++import Link from "next/link";
++
++export default function Footer() {
++  return (
++    <footer>
++      <div className="container">
++        <div className="footer-grid">
++          <div>
++            <Link className="logo" href="/" style={{ color: "white" }}><span className="logo-mark">A</span> ALPHA CLASSES</Link>
++            <p style={{ marginTop: 14, fontSize: 14 }}>Learn today. Lead tomorrow.</p>
++          </div>
++          <div>
++            <div className="footer-title">Learning</div>
++            <div className="footer-links">
++              <Link href="/courses">Courses</Link>
++              <Link href="/tests">Test Series</Link>
++              <Link href="/courses">Study Material</Link>
++            </div>
++          </div>
++          <div>
++            <div className="footer-title">Company</div>
++            <div className="footer-links">
++              <Link href="/about">About</Link>
++              <Link href="/contact">Contact</Link>
++              <Link href="/about#careers">Careers</Link>
++            </div>
++          </div>
++          <div>
++            <div className="footer-title">Support</div>
++            <div className="footer-links">
++              <Link href="/contact">Help Center</Link>
++              <Link href="/privacy">Privacy</Link>
++              <Link href="/terms">Terms</Link>
++            </div>
++          </div>
++        </div>
++        <div className="copyright">© {new Date().getFullYear()} Alpha Classes. All rights reserved.</div>
++      </div>
++    </footer>
++  );
++}
+diff --git a/components/Header.tsx b/components/Header.tsx
+new file mode 100644
+index 0000000..daa4d07
+--- /dev/null
++++ b/components/Header.tsx
+@@ -0,0 +1,36 @@
++"use client";
++
++import Link from "next/link";
++import { useState } from "react";
++
++export default function Header() {
++  const [open, setOpen] = useState(false);
++  return (
++    <header>
++      <div className="container nav">
++        <Link className="logo" href="/"><span className="logo-mark">A</span> ALPHA CLASSES</Link>
++        <nav className="nav-links">
++          <Link href="/courses">Courses</Link>
++          <Link href="/#features">Why Alpha</Link>
++          <Link href="/tests">Test Series</Link>
++          <Link href="/about">About</Link>
++          <Link href="/contact">Contact</Link>
++        </nav>
++        <div className="nav-actions">
++          <Link className="btn btn-outline" href="/login">Login</Link>
++          <Link className="btn btn-primary" href="/signup">Join Now</Link>
++          <button className="burger" aria-label="Menu" onClick={() => setOpen(!open)}>☰</button>
++        </div>
++      </div>
++      <div className={"mobile-menu" + (open ? " open" : "")} onClick={() => setOpen(false)}>
++        <Link href="/courses">Courses</Link>
++        <Link href="/#features">Why Alpha</Link>
++        <Link href="/tests">Test Series</Link>
++        <Link href="/about">About</Link>
++        <Link href="/contact">Contact</Link>
++        <Link href="/login">Login</Link>
++        <Link href="/signup">Join Now</Link>
++      </div>
++    </header>
++  );
++}
+diff --git a/components/LogoutButton.tsx b/components/LogoutButton.tsx
+new file mode 100644
+index 0000000..b2ca252
+--- /dev/null
++++ b/components/LogoutButton.tsx
+@@ -0,0 +1,22 @@
++"use client";
++
++import { useRouter } from "next/navigation";
++import { useState } from "react";
++
++export default function LogoutButton() {
++  const router = useRouter();
++  const [loading, setLoading] = useState(false);
++
++  async function logout() {
++    setLoading(true);
++    await fetch("/api/auth/logout", { method: "POST" });
++    router.push("/");
++    router.refresh();
++  }
++
++  return (
++    <button className="btn btn-outline" onClick={logout} disabled={loading}>
++      {loading ? "Logging out…" : "Logout"}
++    </button>
++  );
++}
+diff --git a/components/TestRunner.tsx b/components/TestRunner.tsx
+new file mode 100644
+index 0000000..4a4e876
+--- /dev/null
++++ b/components/TestRunner.tsx
+@@ -0,0 +1,132 @@
++"use client";
++
++import { useCallback, useEffect, useRef, useState } from "react";
++
++type Question = { id: number; q_text: string; options: string[] };
++type ReviewItem = { id: number; q_text: string; options: string[]; picked: number | null; correct: number; isCorrect: boolean };
++type Result = { score: number; total: number; review: ReviewItem[] };
++
++export default function TestRunner({ slug, title, durationMin, questions }: { slug: string; title: string; durationMin: number; questions: Question[] }) {
++  const [answers, setAnswers] = useState<Record<number, number>>({});
++  const [secondsLeft, setSecondsLeft] = useState(durationMin * 60);
++  const [submitting, setSubmitting] = useState(false);
++  const [result, setResult] = useState<Result | null>(null);
++  const [error, setError] = useState("");
++  const submittedRef = useRef(false);
++
++  const submit = useCallback(async (auto = false) => {
++    if (submittedRef.current) return;
++    submittedRef.current = true;
++    setSubmitting(true);
++    setError("");
++    try {
++      const res = await fetch(`/api/tests/${slug}/submit`, {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ answers: Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, v])) }),
++      });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Could not submit.");
++      setResult({ score: data.score, total: data.total, review: data.review });
++      if (auto) setError("");
++      window.scrollTo({ top: 0, behavior: "smooth" });
++    } catch (e) {
++      submittedRef.current = false;
++      setError(e instanceof Error ? e.message : "Could not submit. Try again.");
++    } finally {
++      setSubmitting(false);
++    }
++  }, [answers, slug]);
++
++  useEffect(() => {
++    if (result) return;
++    const t = setInterval(() => {
++      setSecondsLeft((s) => {
++        if (s <= 1) {
++          clearInterval(t);
++          void submit(true);
++          return 0;
++        }
++        return s - 1;
++      });
++    }, 1000);
++    return () => clearInterval(t);
++  }, [result, submit]);
++
++  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
++  const ss = String(secondsLeft % 60).padStart(2, "0");
++  const answered = Object.keys(answers).length;
++
++  if (result) {
++    const pct = Math.round((result.score / result.total) * 100);
++    const cls = pct >= 70 ? "good" : pct >= 40 ? "mid" : "bad";
++    return (
++      <div>
++        <div className="card" style={{ padding: 26, marginBottom: 22 }}>
++          <h2 style={{ fontSize: 24 }}>Your result — {title}</h2>
++          <p className="muted" style={{ margin: "6px 0 14px" }}>Submitted {new Date().toLocaleString("en-IN")}</p>
++          <div style={{ fontSize: 40, fontWeight: 900 }} className={`score-chip ${cls}`}>
++            {result.score} / {result.total} <span style={{ fontSize: 20 }}>({pct}%)</span>
++          </div>
++          <p className="muted" style={{ marginTop: 8 }}>
++            {pct >= 70 ? "Excellent work! Keep this momentum going. 🎯" : pct >= 40 ? "Good attempt — review the questions below and try again. 💪" : "Keep practising — review the answers below and retake the test. 📚"}
++          </p>
++        </div>
++        {result.review.map((r, i) => (
++          <div key={r.id} className="q-card">
++            <div className="qn">Question {i + 1} · {r.isCorrect ? "✓ Correct" : r.picked === null ? "— Not answered" : "✗ Wrong"}</div>
++            <strong>{r.q_text}</strong>
++            <div>
++              {r.options.map((o, idx) => (
++                <span key={idx} className={"review-opt" + (idx === r.correct ? " correct" : idx === r.picked ? " wrong" : "")}>
++                  {String.fromCharCode(65 + idx)}. {o}
++                </span>
++              ))}
++            </div>
++          </div>
++        ))}
++        <a className="btn btn-primary" href="/tests" style={{ display: "inline-block", marginTop: 8 }}>Take Another Test</a>
++      </div>
++    );
++  }
++
++  return (
++    <div>
++      <div className={"timer-bar" + (secondsLeft < 60 ? " warn" : "")}>
++        <div>
++          <strong>{title}</strong>
++          <div className="small" style={{ color: "#aab1bf" }}>{answered}/{questions.length} answered</div>
++        </div>
++        <div style={{ textAlign: "right" }}>
++          <div className="time">{mm}:{ss}</div>
++          <div className="small" style={{ color: "#aab1bf" }}>{secondsLeft < 60 ? "Auto-submitting soon!" : "Time left"}</div>
++        </div>
++      </div>
++
++      {questions.map((q, i) => (
++        <div key={q.id} className="q-card">
++          <div className="qn">Question {i + 1}</div>
++          <strong style={{ fontSize: 15.5 }}>{q.q_text}</strong>
++          <div>
++            {q.options.map((o, idx) => (
++              <label key={idx} className={"opt" + (answers[q.id] === idx ? " sel" : "")}>
++                <input
++                  type="radio"
++                  name={`q-${q.id}`}
++                  checked={answers[q.id] === idx}
++                  onChange={() => setAnswers((a) => ({ ...a, [q.id]: idx }))}
++                />
++                <span><b style={{ marginRight: 6 }}>{String.fromCharCode(65 + idx)}.</b>{o}</span>
++              </label>
++            ))}
++          </div>
++        </div>
++      ))}
++
++      {error && <div className="form-error" style={{ marginBottom: 12 }}>{error}</div>}
++      <button className="btn btn-primary" style={{ padding: "14px 30px", fontSize: 15 }} onClick={() => submit(false)} disabled={submitting}>
++        {submitting ? "Submitting…" : `Submit Test (${answered}/${questions.length})`}
++      </button>
++    </div>
++  );
++}
+diff --git a/index.html b/index.html
+deleted file mode 100644
+index 64d4dcc..0000000
+--- a/index.html
++++ /dev/null
+@@ -1,146 +0,0 @@
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-<meta charset="UTF-8">
+-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+-<title>Alpha Classes — Learn Today. Lead Tomorrow.</title>
+-<style>
+-*{box-sizing:border-box;margin:0;padding:0}
+-:root{--primary:#ff6b00;--dark:#111827;--muted:#667085;--light:#fff7ed;--border:#ececec}
+-body{font-family:Inter,Arial,sans-serif;color:var(--dark);background:#fff;line-height:1.5}
+-a{text-decoration:none;color:inherit}
+-.container{max-width:1180px;margin:auto;padding:0 22px}
+-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-bottom:1px solid #eee}
+-.nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:25px}
+-.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:21px}
+-.logo-mark{width:38px;height:38px;border-radius:11px;background:var(--primary);color:white;display:grid;place-items:center;font-size:22px}
+-.nav-links{display:flex;gap:25px;font-size:14px;font-weight:600;color:#475467}
+-.nav-actions{display:flex;gap:10px;align-items:center}
+-.btn{border:0;border-radius:10px;padding:11px 17px;font-weight:800;cursor:pointer;display:inline-block}
+-.btn-outline{background:#fff;border:1px solid #ddd}
+-.btn-primary{background:var(--primary);color:#fff;box-shadow:0 8px 20px rgba(255,107,0,.2)}
+-.hero{background:linear-gradient(135deg,#fff7ed 0%,#fff 55%,#fff1e7 100%);padding:78px 0 65px;overflow:hidden}
+-.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center}
+-.badge{display:inline-flex;background:#fff;border:1px solid #ffd7b5;color:#d95100;padding:7px 12px;border-radius:999px;font-weight:800;font-size:13px;margin-bottom:18px}
+-h1{font-size:58px;line-height:1.02;letter-spacing:-2.5px;margin-bottom:20px}
+-h1 span{color:var(--primary)}
+-.hero p{font-size:18px;color:var(--muted);max-width:600px;margin-bottom:28px}
+-.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}
+-.hero-card{position:relative;background:#111827;border-radius:26px;padding:24px;color:white;box-shadow:0 25px 60px rgba(17,24,39,.2)}
+-.video{height:290px;border-radius:18px;background:linear-gradient(135deg,#292f3d,#10131a);display:grid;place-items:center;position:relative;overflow:hidden}
+-.video:before{content:"";position:absolute;width:180px;height:180px;border-radius:50%;background:rgba(255,107,0,.25);filter:blur(5px)}
+-.play{position:relative;width:70px;height:70px;border-radius:50%;background:var(--primary);display:grid;place-items:center;font-size:27px;padding-left:4px}
+-.course-mini{margin-top:18px;display:flex;justify-content:space-between;align-items:center}
+-.course-mini small{color:#aab1bf}.price{font-size:22px;font-weight:900}
+-.stats{padding:26px 0;border-bottom:1px solid #eee}
+-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+-.stat strong{font-size:28px}.stat span{display:block;color:var(--muted);font-size:13px}
+-.section{padding:70px 0}
+-.section-head{display:flex;justify-content:space-between;align-items:end;margin-bottom:28px}
+-.section h2{font-size:34px;letter-spacing:-1px}.section-head p{color:var(--muted)}
+-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+-.card{border:1px solid var(--border);border-radius:18px;overflow:hidden;background:#fff;transition:.2s}
+-.card:hover{transform:translateY(-4px);box-shadow:0 14px 35px rgba(0,0,0,.08)}
+-.card-top{height:145px;padding:20px;background:var(--light);display:flex;justify-content:space-between;align-items:flex-start}
+-.icon{width:52px;height:52px;border-radius:14px;background:#fff;display:grid;place-items:center;font-size:27px}
+-.level{font-size:12px;background:#fff;border:1px solid #eee;border-radius:20px;padding:6px 9px;font-weight:700}
+-.card-body{padding:20px}.card h3{margin-bottom:8px;font-size:19px}.card p{color:var(--muted);font-size:14px;margin-bottom:17px}
+-.meta{display:flex;justify-content:space-between;font-size:13px;color:#667085}
+-.feature{background:#111827;color:#fff}
+-.feature .section-head p{color:#b7bdc8}
+-.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+-.feature-item{padding:24px;border:1px solid #2e3542;border-radius:17px;background:#181e29}
+-.feature-item .ficon{font-size:28px;margin-bottom:14px}.feature-item p{color:#aeb5c0;font-size:14px;margin-top:6px}
+-.cta{margin:0 0 70px;border-radius:25px;padding:45px;background:linear-gradient(120deg,#ff6b00,#ff8a32);color:white;display:flex;justify-content:space-between;align-items:center;gap:20px}
+-.cta p{opacity:.9;margin-top:5px}.cta .btn{background:white;color:#d95100}
+-footer{background:#0b0f15;color:#b8bec8;padding:45px 0}.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px}.footer-title{color:white;font-weight:800;margin-bottom:12px}.footer-links{display:grid;gap:8px;font-size:14px}.copyright{border-top:1px solid #252b34;margin-top:30px;padding-top:20px;font-size:13px}
+-@media(max-width:850px){.nav-links{display:none}.hero-grid{grid-template-columns:1fr}.hero{padding-top:55px}h1{font-size:45px}.grid,.feature-grid{grid-template-columns:1fr 1fr}.stats-grid{grid-template-columns:repeat(2,1fr);gap:25px}.footer-grid{grid-template-columns:1fr 1fr}.cta{display:block}.cta .btn{margin-top:20px}}
+-@media(max-width:550px){.nav-actions .btn-outline{display:none}.grid,.feature-grid{grid-template-columns:1fr}.section{padding:52px 0}.section-head{display:block}.section-head p{margin-top:8px}.hero-card{margin-top:10px}.video{height:230px}.footer-grid{grid-template-columns:1fr}h1{font-size:39px}}
+-</style>
+-</head>
+-<body>
+-<header>
+-  <div class="container nav">
+-    <a class="logo" href="#"><span class="logo-mark">A</span> ALPHA CLASSES</a>
+-    <nav class="nav-links">
+-      <a href="#courses">Courses</a><a href="#features">Why Alpha</a><a href="#tests">Test Series</a><a href="#about">About</a>
+-    </nav>
+-    <div class="nav-actions"><button class="btn btn-outline" onclick="login()">Login</button><button class="btn btn-primary" onclick="joinNow()">Join Now</button></div>
+-  </div>
+-</header>
+-
+-<main>
+-<section class="hero">
+-<div class="container hero-grid">
+-  <div>
+-    <div class="badge">🚀 New-age learning platform</div>
+-    <h1>Learn Today.<br><span>Lead Tomorrow.</span></h1>
+-    <p>Live classes, expert teachers, smart tests and structured study material — everything students need in one place.</p>
+-    <div class="hero-buttons"><a class="btn btn-primary" href="#courses">Explore Courses →</a><button class="btn btn-outline" onclick="watchDemo()">▶ Watch Demo</button></div>
+-  </div>
+-  <div class="hero-card">
+-    <div class="video"><div class="play">▶</div></div>
+-    <div class="course-mini"><div><small>Featured Course</small><br><strong>Complete JEE Foundation</strong></div><div class="price">₹999</div></div>
+-  </div>
+-</div>
+-</section>
+-
+-<section class="stats"><div class="container stats-grid">
+-  <div class="stat"><strong>50K+</strong><span>Students Learning</span></div>
+-  <div class="stat"><strong>120+</strong><span>Expert Teachers</span></div>
+-  <div class="stat"><strong>500+</strong><span>Video Classes</span></div>
+-  <div class="stat"><strong>95%</strong><span>Student Satisfaction</span></div>
+-</div></section>
+-
+-<section class="section" id="courses"><div class="container">
+-<div class="section-head"><div><h2>Popular Courses</h2><p>Choose a path and start learning.</p></div><a href="#" style="color:#f56600;font-weight:800">View all →</a></div>
+-<div class="grid">
+-  <article class="card"><div class="card-top"><div class="icon">📚</div><span class="level">Foundation</span></div><div class="card-body"><h3>Class 9–10 Foundation</h3><p>Build strong concepts in Maths, Science and English.</p><div class="meta"><span>120 Classes</span><b>₹699</b></div></div></article>
+-  <article class="card"><div class="card-top"><div class="icon">🎯</div><span class="level">Competitive</span></div><div class="card-body"><h3>JEE Preparation</h3><p>Physics, Chemistry and Maths with regular practice tests.</p><div class="meta"><span>280 Classes</span><b>₹1,499</b></div></div></article>
+-  <article class="card"><div class="card-top"><div class="icon">🔬</div><span class="level">Medical</span></div><div class="card-body"><h3>NEET Preparation</h3><p>Biology, Physics and Chemistry with doubt support.</p><div class="meta"><span>320 Classes</span><b>₹1,499</b></div></div></article>
+-  <article class="card"><div class="card-top"><div class="icon">📝</div><span class="level">Govt Exams</span></div><div class="card-body"><h3>SSC Complete Course</h3><p>Quant, Reasoning, English and General Awareness.</p><div class="meta"><span>200 Classes</span><b>₹899</b></div></div></article>
+-  <article class="card"><div class="card-top"><div class="icon">💻</div><span class="level">Technology</span></div><div class="card-body"><h3>Web Development</h3><p>HTML, CSS, JavaScript and modern project-based learning.</p><div class="meta"><span>90 Classes</span><b>₹799</b></div></div></article>
+-  <article class="card"><div class="card-top"><div class="icon">📈</div><span class="level">Skills</span></div><div class="card-body"><h3>Computer & Career Skills</h3><p>Practical computer skills for college and job readiness.</p><div class="meta"><span>60 Classes</span><b>₹499</b></div></div></article>
+-</div>
+-</div></section>
+-
+-<section class="section feature" id="features"><div class="container">
+-<div class="section-head"><div><h2>Everything you need to learn</h2><p>Designed for focused, consistent progress.</p></div></div>
+-<div class="feature-grid">
+- <div class="feature-item"><div class="ficon">🎥</div><h3>Live + Recorded</h3><p>Attend live sessions or learn at your own pace.</p></div>
+- <div class="feature-item"><div class="ficon">📄</div><h3>Smart Study Material</h3><p>Notes, PDFs, practice sheets and revision resources.</p></div>
+- <div class="feature-item"><div class="ficon">🧪</div><h3>Test Series</h3><p>Practice with timed tests and detailed results.</p></div>
+- <div class="feature-item"><div class="ficon">📊</div><h3>Performance Tracking</h3><p>See your progress, scores and learning streak.</p></div>
+- <div class="feature-item"><div class="ficon">👨‍🏫</div><h3>Doubt Support</h3><p>Ask questions and get help when you are stuck.</p></div>
+- <div class="feature-item"><div class="ficon">📱</div><h3>Learn Anywhere</h3><p>Responsive experience for desktop, tablet and mobile.</p></div>
+-</div></div></section>
+-
+-<section class="section" id="tests"><div class="container">
+-<div class="section-head"><div><h2>Test Series</h2><p>Practice. Analyze. Improve.</p></div></div>
+-<div class="grid">
+- <article class="card"><div class="card-body"><h3>JEE Weekly Test</h3><p>90 questions · 180 minutes · Full analysis</p><button class="btn btn-primary" onclick="startTest()">Start Test</button></div></article>
+- <article class="card"><div class="card-body"><h3>SSC Mock Test</h3><p>100 questions · 60 minutes · Instant result</p><button class="btn btn-primary" onclick="startTest()">Start Test</button></div></article>
+- <article class="card"><div class="card-body"><h3>Class 10 Science</h3><p>50 questions · 60 minutes · Chapter-wise</p><button class="btn btn-primary" onclick="startTest()">Start Test</button></div></article>
+-</div></div></section>
+-
+-<div class="container"><section class="cta" id="about"><div><h2>Ready to start your Alpha journey?</h2><p>Join thousands of learners building their future.</p></div><button class="btn" onclick="joinNow()">Create Free Account</button></section></div>
+-</main>
+-
+-<footer><div class="container">
+-<div class="footer-grid">
+-<div><a class="logo" href="#" style="color:white"><span class="logo-mark">A</span> ALPHA CLASSES</a><p style="margin-top:14px;font-size:14px">Learn today. Lead tomorrow.</p></div>
+-<div><div class="footer-title">Learning</div><div class="footer-links"><a href="#courses">Courses</a><a href="#tests">Test Series</a><a href="#">Study Material</a></div></div>
+-<div><div class="footer-title">Company</div><div class="footer-links"><a href="#about">About</a><a href="#">Contact</a><a href="#">Careers</a></div></div>
+-<div><div class="footer-title">Support</div><div class="footer-links"><a href="#">Help Center</a><a href="#">Privacy</a><a href="#">Terms</a></div></div>
+-</div>
+-<div class="copyright">© 2026 Alpha Classes. Demo preview — all course data is sample content.</div>
+-</div></footer>
+-
+-<script>
+-function joinNow(){alert("Welcome to Alpha Classes! Signup flow can be connected here.");}
+-function login(){alert("Login page can be connected here.");}
+-function watchDemo(){alert("Demo video player can be connected here.");}
+-function startTest(){alert("Test Series demo: your test interface can be added next.");}
+-</script>
+-</body>
+-</html>
+\ No newline at end of file
+diff --git a/lib/auth.ts b/lib/auth.ts
+new file mode 100644
+index 0000000..2713833
+--- /dev/null
++++ b/lib/auth.ts
+@@ -0,0 +1,80 @@
++import { SignJWT, jwtVerify } from "jose";
++import { cookies } from "next/headers";
++
++const SESSION_COOKIE = "alpha_session";
++const ADMIN_COOKIE = "alpha_admin";
++
++function secretKey(): Uint8Array {
++  const s = process.env.AUTH_SECRET || "alpha-dev-secret-change-me";
++  return new TextEncoder().encode(s);
++}
++
++export type Session = { uid: number; name: string; email: string };
++
++export async function createSession(session: Session): Promise<void> {
++  const token = await new SignJWT({ uid: session.uid, name: session.name, email: session.email })
++    .setProtectedHeader({ alg: "HS256" })
++    .setIssuedAt()
++    .setExpirationTime("30d")
++    .sign(secretKey());
++  const store = await cookies();
++  store.set(SESSION_COOKIE, token, {
++    httpOnly: true,
++    sameSite: "lax",
++    secure: process.env.NODE_ENV === "production",
++    path: "/",
++    maxAge: 60 * 60 * 24 * 30,
++  });
++}
++
++export async function getSession(): Promise<Session | null> {
++  const store = await cookies();
++  const token = store.get(SESSION_COOKIE)?.value;
++  if (!token) return null;
++  try {
++    const { payload } = await jwtVerify(token, secretKey());
++    if (typeof payload.uid !== "number" || typeof payload.name !== "string" || typeof payload.email !== "string") return null;
++    return { uid: payload.uid, name: payload.name, email: payload.email };
++  } catch {
++    return null;
++  }
++}
++
++export async function destroySession(): Promise<void> {
++  const store = await cookies();
++  store.delete(SESSION_COOKIE);
++}
++
++// ---------- admin ----------
++export async function createAdminSession(): Promise<void> {
++  const token = await new SignJWT({ admin: true })
++    .setProtectedHeader({ alg: "HS256" })
++    .setIssuedAt()
++    .setExpirationTime("12h")
++    .sign(secretKey());
++  const store = await cookies();
++  store.set(ADMIN_COOKIE, token, {
++    httpOnly: true,
++    sameSite: "lax",
++    secure: process.env.NODE_ENV === "production",
++    path: "/",
++    maxAge: 60 * 60 * 12,
++  });
++}
++
++export async function isAdmin(): Promise<boolean> {
++  const store = await cookies();
++  const token = store.get(ADMIN_COOKIE)?.value;
++  if (!token) return false;
++  try {
++    const { payload } = await jwtVerify(token, secretKey());
++    return payload.admin === true;
++  } catch {
++    return false;
++  }
++}
++
++export async function destroyAdminSession(): Promise<void> {
++  const store = await cookies();
++  store.delete(ADMIN_COOKIE);
++}
+diff --git a/lib/db.ts b/lib/db.ts
+new file mode 100644
+index 0000000..6962987
+--- /dev/null
++++ b/lib/db.ts
+@@ -0,0 +1,208 @@
++import { Pool } from "pg";
++
++const connectionString = process.env.DATABASE_URL || "";
++
++const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promise<void> };
++
++export const pool =
++  globalForDb.pool ??
++  new Pool({
++    connectionString,
++    ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1")
++      ? false
++      : { rejectUnauthorized: false },
++    max: 5,
++  });
++
++if (process.env.NODE_ENV !== "production") globalForDb.pool = pool;
++
++const SCHEMA = `
++CREATE TABLE IF NOT EXISTS students (
++  id SERIAL PRIMARY KEY,
++  name TEXT NOT NULL,
++  email TEXT NOT NULL UNIQUE,
++  phone TEXT NOT NULL DEFAULT '',
++  password_hash TEXT NOT NULL,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
++);
++CREATE TABLE IF NOT EXISTS courses (
++  id SERIAL PRIMARY KEY,
++  slug TEXT NOT NULL UNIQUE,
++  title TEXT NOT NULL,
++  level TEXT NOT NULL,
++  icon TEXT NOT NULL,
++  description TEXT NOT NULL,
++  highlights TEXT NOT NULL DEFAULT '',
++  classes_count INT NOT NULL DEFAULT 0,
++  price INT NOT NULL DEFAULT 0,
++  featured BOOLEAN NOT NULL DEFAULT false,
++  sort INT NOT NULL DEFAULT 0
++);
++CREATE TABLE IF NOT EXISTS enquiries (
++  id SERIAL PRIMARY KEY,
++  name TEXT NOT NULL,
++  email TEXT NOT NULL,
++  phone TEXT NOT NULL DEFAULT '',
++  course_id INT REFERENCES courses(id) ON DELETE SET NULL,
++  message TEXT NOT NULL DEFAULT '',
++  status TEXT NOT NULL DEFAULT 'new',
++  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
++);
++CREATE TABLE IF NOT EXISTS tests (
++  id SERIAL PRIMARY KEY,
++  slug TEXT NOT NULL UNIQUE,
++  title TEXT NOT NULL,
++  description TEXT NOT NULL,
++  duration_min INT NOT NULL DEFAULT 15,
++  sort INT NOT NULL DEFAULT 0
++);
++CREATE TABLE IF NOT EXISTS questions (
++  id SERIAL PRIMARY KEY,
++  test_id INT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
++  q_text TEXT NOT NULL,
++  options JSONB NOT NULL,
++  correct INT NOT NULL,
++  sort INT NOT NULL DEFAULT 0
++);
++CREATE TABLE IF NOT EXISTS enrollments (
++  id SERIAL PRIMARY KEY,
++  student_id INT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
++  course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
++  UNIQUE (student_id, course_id)
++);
++CREATE TABLE IF NOT EXISTS test_results (
++  id SERIAL PRIMARY KEY,
++  student_id INT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
++  test_id INT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
++  score INT NOT NULL,
++  total INT NOT NULL,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
++);
++CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_id);
++CREATE INDEX IF NOT EXISTS idx_enquiries_created ON enquiries(created_at DESC);
++`;
++
++const COURSES: Array<[string, string, string, string, string, string, number, number, boolean, number]> = [
++  ["class-9-10-foundation", "Class 9–10 Foundation", "Foundation", "📚", "Build strong concepts in Maths, Science and English with NCERT-focused teaching and regular practice.", "NCERT-based teaching|Weekly practice tests|Doubt clearing sessions|Printed + PDF notes", 120, 699, false, 1],
++  ["jee-preparation", "JEE Preparation", "Competitive", "🎯", "Physics, Chemistry and Maths with regular practice tests, PYQs and rank-focused preparation.", "Full syllabus coverage|Previous year questions|Weekly mock tests|Doubt support", 280, 1499, true, 2],
++  ["neet-preparation", "NEET Preparation", "Medical", "🔬", "Biology, Physics and Chemistry with doubt support and NCERT-first approach for NEET.", "NCERT-first approach|Chapter-wise tests|Doubt support|Revision batches", 320, 1499, true, 3],
++  ["ssc-complete-course", "SSC Complete Course", "Govt Exams", "📝", "Quant, Reasoning, English and General Awareness — complete preparation for SSC exams.", "All four subjects|Daily practice|Mock test series|Exam pattern updates", 200, 899, false, 4],
++  ["web-development", "Web Development", "Technology", "💻", "HTML, CSS, JavaScript and modern project-based learning to make you job-ready.", "Project-based learning|Live coding classes|Portfolio building|Interview preparation", 90, 799, false, 5],
++  ["computer-career-skills", "Computer & Career Skills", "Skills", "📈", "Practical computer skills for college and job readiness — Office, internet, communication.", "MS Office training|Typing practice|Email & internet skills|Interview readiness", 60, 499, false, 6],
++];
++
++const TESTS: Array<[string, string, string, number, number, Array<[string, string[], number]>]> = [
++  ["class-10-science", "Class 10 Science", "Chapter-wise practice test covering Physics, Chemistry and Biology from the Class 10 NCERT syllabus.", 15, 1, [
++    ["The SI unit of electric current is:", ["Volt", "Ampere", "Ohm", "Watt"], 1],
++    ["The chemical formula of quicklime is:", ["CaCO₃", "Ca(OH)₂", "CaO", "CaSO₄"], 2],
++    ["Which gas is evolved when a metal reacts with a dilute acid?", ["Oxygen", "Hydrogen", "Carbon dioxide", "Nitrogen"], 1],
++    ["The pH of a neutral solution at 25°C is:", ["0", "7", "10", "14"], 1],
++    ["Milk turns into curd due to the action of:", ["Yeast", "Virus", "Bacteria (Lactobacillus)", "Fungi"], 2],
++    ["Who is known as the father of genetics for his laws of inheritance?", ["Darwin", "Mendel", "Newton", "Pasteur"], 1],
++    ["The focal length of a plane mirror is:", ["Zero", "Equal to its radius", "Infinity", "Negative"], 2],
++    ["Which of the following is a renewable source of energy?", ["Coal", "Petroleum", "Biogas", "Natural gas"], 2],
++  ]],
++  ["jee-weekly-test", "JEE Weekly Test", "Weekly practice test for JEE aspirants covering Physics, Chemistry and Mathematics.", 20, 2, [
++    ["The dimensional formula of pressure is:", ["[ML⁻¹T⁻²]", "[MLT⁻²]", "[ML²T⁻²]", "[ML⁻²T⁻¹]"], 0],
++    ["If the velocity of a particle is v = 3t², then acceleration at t = 2 s is:", ["6 m/s²", "12 m/s²", "9 m/s²", "18 m/s²"], 1],
++    ["For an ideal gas, which quantity is constant in an isothermal process?", ["Pressure", "Volume", "Temperature", "Entropy"], 2],
++    ["The value of ∫ 2x dx is:", ["2x² + C", "x² + C", "x + C", "2 + C"], 1],
++    ["Two resistors of 6 Ω each connected in parallel give an equivalent resistance of:", ["12 Ω", "6 Ω", "3 Ω", "1.5 Ω"], 2],
++    ["The escape velocity from the surface of the Earth is approximately:", ["7.9 km/s", "11.2 km/s", "9.8 km/s", "15.0 km/s"], 1],
++    ["If the roots of x² − 5x + 6 = 0 are α and β, then α + β equals:", ["5", "6", "−5", "1"], 0],
++    ["The hybridisation of carbon in ethyne (C₂H₂) is:", ["sp³", "sp²", "sp", "dsp²"], 2],
++  ]],
++  ["ssc-mock-test", "SSC Mock Test", "Full mock test covering Quantitative Aptitude, Reasoning, English and General Awareness for SSC exams.", 15, 3, [
++    ["Find the next number in the series: 2, 5, 8, 11, ?", ["13", "14", "15", "16"], 1],
++    ["The HCF of 12 and 18 is:", ["2", "3", "6", "9"], 2],
++    ["Which is the largest planet in our solar system?", ["Earth", "Mars", "Jupiter", "Saturn"], 2],
++    ["Who was the first President of India?", ["Jawaharlal Nehru", "Dr. Rajendra Prasad", "S. Radhakrishnan", "Mahatma Gandhi"], 1],
++    ["Who wrote the Indian National Anthem?", ["Bankim Chandra Chatterjee", "Rabindranath Tagore", "Sarojini Naidu", "Subhash Chandra Bose"], 1],
++    ["Choose the synonym of 'ABUNDANT':", ["Scarce", "Plentiful", "Tiny", "Rare"], 1],
++    ["The currency of Japan is:", ["Yuan", "Won", "Yen", "Ringgit"], 2],
++    ["If a train travels 360 km in 4 hours, its speed is:", ["80 km/h", "90 km/h", "100 km/h", "120 km/h"], 1],
++  ]],
++];
++
++async function migrate() {
++  const client = await pool.connect();
++  try {
++    await client.query(SCHEMA);
++    const { rows } = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM courses");
++    if (Number(rows[0].count) === 0) {
++      for (const c of COURSES) {
++        await client.query(
++          "INSERT INTO courses (slug, title, level, icon, description, highlights, classes_count, price, featured, sort) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT (slug) DO NOTHING",
++          c
++        );
++      }
++      for (const t of TESTS) {
++        const r = await client.query(
++          "INSERT INTO tests (slug, title, description, duration_min, sort) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (slug) DO NOTHING RETURNING id",
++          [t[0], t[1], t[2], t[3], t[4]]
++        );
++        const testId = r.rows[0]?.id;
++        if (testId) {
++          let i = 0;
++          for (const [text, options, correct] of t[5]) {
++            await client.query(
++              "INSERT INTO questions (test_id, q_text, options, correct, sort) VALUES ($1,$2,$3,$4,$5)",
++              [testId, text, JSON.stringify(options), correct, i++]
++            );
++          }
++        }
++      }
++    }
++  } finally {
++    client.release();
++  }
++}
++
++export function ensureDb(): Promise<void> {
++  if (!globalForDb.initPromise) {
++    globalForDb.initPromise = migrate().catch((e) => {
++      globalForDb.initPromise = undefined;
++      throw e;
++    });
++  }
++  return globalForDb.initPromise;
++}
++
++// ---------- shared types ----------
++export type Course = { id: number; slug: string; title: string; level: string; icon: string; description: string; highlights: string; classes_count: number; price: number; featured: boolean };
++export type Test = { id: number; slug: string; title: string; description: string; duration_min: number; question_count: number };
++
++// ---------- queries ----------
++export async function getCourses(): Promise<Course[]> {
++  await ensureDb();
++  const { rows } = await pool.query<Course>("SELECT id, slug, title, level, icon, description, highlights, classes_count, price, featured FROM courses ORDER BY sort, id");
++  return rows;
++}
++
++export async function getCourse(slug: string): Promise<Course | null> {
++  await ensureDb();
++  const { rows } = await pool.query<Course>("SELECT id, slug, title, level, icon, description, highlights, classes_count, price, featured FROM courses WHERE slug = $1", [slug]);
++  return rows[0] || null;
++}
++
++export async function getTests(): Promise<Test[]> {
++  await ensureDb();
++  const { rows } = await pool.query<Test>(
++    "SELECT t.id, t.slug, t.title, t.description, t.duration_min, COUNT(q.id)::int AS question_count FROM tests t LEFT JOIN questions q ON q.test_id = t.id GROUP BY t.id ORDER BY t.sort, t.id"
++  );
++  return rows;
++}
++
++export async function getTestWithQuestions(slug: string) {
++  await ensureDb();
++  const { rows } = await pool.query<Test & { duration_min: number }>(
++    "SELECT id, slug, title, description, duration_min FROM tests WHERE slug = $1", [slug]
++  );
++  const test = rows[0];
++  if (!test) return null;
++  const qs = await pool.query<{ id: number; q_text: string; options: string[]; correct: number }>(
++    "SELECT id, q_text, options, correct FROM questions WHERE test_id = $1 ORDER BY sort, id", [test.id]
++  );
++  return { test, questions: qs.rows };
++}
+diff --git a/middleware.ts b/middleware.ts
+new file mode 100644
+index 0000000..c15a62a
+--- /dev/null
++++ b/middleware.ts
+@@ -0,0 +1,42 @@
++import { NextResponse, type NextRequest } from "next/server";
++import { jwtVerify } from "jose";
++
++const SESSION_COOKIE = "alpha_session";
++const ADMIN_COOKIE = "alpha_admin";
++
++async function validCookie(token: string | undefined): Promise<boolean> {
++  if (!token) return false;
++  try {
++    const secret = new TextEncoder().encode(process.env.AUTH_SECRET || "alpha-dev-secret-change-me");
++    await jwtVerify(token, secret);
++    return true;
++  } catch {
++    return false;
++  }
++}
++
++export async function middleware(req: NextRequest) {
++  const { pathname } = req.nextUrl;
++
++  if (pathname.startsWith("/dashboard")) {
++    if (!(await validCookie(req.cookies.get(SESSION_COOKIE)?.value))) {
++      const url = req.nextUrl.clone();
++      url.pathname = "/login";
++      url.searchParams.set("next", pathname);
++      return NextResponse.redirect(url);
++    }
++  }
++
++  if (pathname.startsWith("/admin")) {
++    if (!(await validCookie(req.cookies.get(ADMIN_COOKIE)?.value))) {
++      // don't redirect — the /admin page shows a login form; just hide content
++      return NextResponse.next();
++    }
++  }
++
++  return NextResponse.next();
++}
++
++export const config = {
++  matcher: ["/dashboard/:path*", "/admin/:path*"],
++};
+diff --git a/next.config.mjs b/next.config.mjs
+new file mode 100644
+index 0000000..d5456a1
+--- /dev/null
++++ b/next.config.mjs
+@@ -0,0 +1,6 @@
++/** @type {import('next').NextConfig} */
++const nextConfig = {
++  reactStrictMode: true,
++};
++
++export default nextConfig;
+diff --git a/package-lock.json b/package-lock.json
+new file mode 100644
+index 0000000..4d85766
+--- /dev/null
++++ b/package-lock.json
+@@ -0,0 +1,684 @@
++{
++  "name": "alpha-classes",
++  "version": "1.0.0",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "alpha-classes",
++      "version": "1.0.0",
++      "dependencies": {
++        "bcryptjs": "^2.4.3",
++        "jose": "^5.9.6",
++        "next": "14.2.32",
++        "pg": "^8.13.1",
++        "react": "^18.3.1",
++        "react-dom": "^18.3.1"
++      },
++      "devDependencies": {
++        "@types/bcryptjs": "^2.4.6",
++        "@types/node": "^20.14.0",
++        "@types/pg": "^8.11.6",
++        "@types/react": "^18.3.5",
++        "@types/react-dom": "^18.3.0",
++        "typescript": "^5.5.4"
++      }
++    },
++    "node_modules/@next/env": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/env/-/env-14.2.32.tgz",
++      "integrity": "sha512-n9mQdigI6iZ/DF6pCTwMKeWgF2e8lg7qgt5M7HXMLtyhZYMnf/u905M18sSpPmHL9MKp9JHo56C6jrD2EvWxng==",
++      "license": "MIT"
++    },
++    "node_modules/@next/swc-darwin-arm64": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-14.2.32.tgz",
++      "integrity": "sha512-osHXveM70zC+ilfuFa/2W6a1XQxJTvEhzEycnjUaVE8kpUS09lDpiDDX2YLdyFCzoUbvbo5r0X1Kp4MllIOShw==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-darwin-x64": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-14.2.32.tgz",
++      "integrity": "sha512-P9NpCAJuOiaHHpqtrCNncjqtSBi1f6QUdHK/+dNabBIXB2RUFWL19TY1Hkhu74OvyNQEYEzzMJCMQk5agjw1Qg==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-arm64-gnu": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-14.2.32.tgz",
++      "integrity": "sha512-v7JaO0oXXt6d+cFjrrKqYnR2ubrD+JYP7nQVRZgeo5uNE5hkCpWnHmXm9vy3g6foMO8SPwL0P3MPw1c+BjbAzA==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-arm64-musl": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-14.2.32.tgz",
++      "integrity": "sha512-tA6sIKShXtSJBTH88i0DRd6I9n3ZTirmwpwAqH5zdJoQF7/wlJXR8DkPmKwYl5mFWhEKr5IIa3LfpMW9RRwKmQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-x64-gnu": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-14.2.32.tgz",
++      "integrity": "sha512-7S1GY4TdnlGVIdeXXKQdDkfDysoIVFMD0lJuVVMeb3eoVjrknQ0JNN7wFlhCvea0hEk0Sd4D1hedVChDKfV2jw==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-linux-x64-musl": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-14.2.32.tgz",
++      "integrity": "sha512-OHHC81P4tirVa6Awk6eCQ6RBfWl8HpFsZtfEkMpJ5GjPsJ3nhPe6wKAJUZ/piC8sszUkAgv3fLflgzPStIwfWg==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-win32-arm64-msvc": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-14.2.32.tgz",
++      "integrity": "sha512-rORQjXsAFeX6TLYJrCG5yoIDj+NKq31Rqwn8Wpn/bkPNy5rTHvOXkW8mLFonItS7QC6M+1JIIcLe+vOCTOYpvg==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-win32-ia32-msvc": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-ia32-msvc/-/swc-win32-ia32-msvc-14.2.32.tgz",
++      "integrity": "sha512-jHUeDPVHrgFltqoAqDB6g6OStNnFxnc7Aks3p0KE0FbwAvRg6qWKYF5mSTdCTxA3axoSAUwxYdILzXJfUwlHhA==",
++      "cpu": [
++        "ia32"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@next/swc-win32-x64-msvc": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-14.2.32.tgz",
++      "integrity": "sha512-2N0lSoU4GjfLSO50wvKpMQgKd4HdI2UHEhQPPPnlgfBJlOgJxkjpkYBqzk08f1gItBB6xF/n+ykso2hgxuydsA==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">= 10"
++      }
++    },
++    "node_modules/@swc/counter": {
++      "version": "0.1.3",
++      "resolved": "https://registry.npmjs.org/@swc/counter/-/counter-0.1.3.tgz",
++      "integrity": "sha512-e2BR4lsJkkRlKZ/qCHPw9ZaSxc0MVUd7gtbtaB7aMvHeJVYe8sOB8DBZkP2DtISHGSku9sCK6T6cnY0CtXrOCQ==",
++      "license": "Apache-2.0"
++    },
++    "node_modules/@swc/helpers": {
++      "version": "0.5.5",
++      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.5.tgz",
++      "integrity": "sha512-KGYxvIOXcceOAbEk4bi/dVLEK9z8sZ0uBB3Il5b1rhfClSpcX0yfRO0KmTkqR2cnQDymwLB+25ZyMzICg/cm/A==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@swc/counter": "^0.1.3",
++        "tslib": "^2.4.0"
++      }
++    },
++    "node_modules/@types/bcryptjs": {
++      "version": "2.4.6",
++      "resolved": "https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz",
++      "integrity": "sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/@types/node": {
++      "version": "20.19.43",
++      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.43.tgz",
++      "integrity": "sha512-6oYBAi5ikg4Pl+kGsoYtawUMBT2zZMCvPNF7pVLnHZfd1zf38DRiWn/gT01RYCdUqkv7Fhr+C9ot4/tb+2sVvA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "undici-types": "~6.21.0"
++      }
++    },
++    "node_modules/@types/pg": {
++      "version": "8.23.1",
++      "resolved": "https://registry.npmjs.org/@types/pg/-/pg-8.23.1.tgz",
++      "integrity": "sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/node": "*",
++        "pg-protocol": "*",
++        "pg-types": "^2.2.0"
++      }
++    },
++    "node_modules/@types/prop-types": {
++      "version": "15.7.15",
++      "resolved": "https://registry.npmjs.org/@types/prop-types/-/prop-types-15.7.15.tgz",
++      "integrity": "sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/@types/react": {
++      "version": "18.3.31",
++      "resolved": "https://registry.npmjs.org/@types/react/-/react-18.3.31.tgz",
++      "integrity": "sha512-vfEqpXTvwT91yhmwdfouStN2hSKwTvyRs8qpLfADyrq/kxDw0hZM7Wk9Ug1FELj8hIby+S/+kQCSRFF32nv2Qw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/prop-types": "*",
++        "csstype": "^3.2.2"
++      }
++    },
++    "node_modules/@types/react-dom": {
++      "version": "18.3.7",
++      "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.3.7.tgz",
++      "integrity": "sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==",
++      "dev": true,
++      "license": "MIT",
++      "peerDependencies": {
++        "@types/react": "^18.0.0"
++      }
++    },
++    "node_modules/bcryptjs": {
++      "version": "2.4.3",
++      "resolved": "https://registry.npmjs.org/bcryptjs/-/bcryptjs-2.4.3.tgz",
++      "integrity": "sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==",
++      "license": "MIT"
++    },
++    "node_modules/busboy": {
++      "version": "1.6.0",
++      "resolved": "https://registry.npmjs.org/busboy/-/busboy-1.6.0.tgz",
++      "integrity": "sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==",
++      "dependencies": {
++        "streamsearch": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=10.16.0"
++      }
++    },
++    "node_modules/caniuse-lite": {
++      "version": "1.0.30001814",
++      "resolved": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001814.tgz",
++      "integrity": "sha512-/Uaf1lAzr59XcMpW0o96WoEfr+VXK2OX4U9AgFoiSHsVJ4HppnIFUjtYzsyDH2+tgANaQb2/oxYGwCPapN1FpA==",
++      "funding": [
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/browserslist"
++        },
++        {
++          "type": "tidelift",
++          "url": "https://tidelift.com/funding/github/npm/caniuse-lite"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "CC-BY-4.0"
++    },
++    "node_modules/client-only": {
++      "version": "0.0.1",
++      "resolved": "https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz",
++      "integrity": "sha512-IV3Ou0jSMzZrd3pZ48nLkT9DA7Ag1pnPzaiQhpW7c3RbcqqzvzzVu+L8gfqMp/8IM2MQtSiqaCxrrcfu8I8rMA==",
++      "license": "MIT"
++    },
++    "node_modules/csstype": {
++      "version": "3.2.3",
++      "resolved": "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz",
++      "integrity": "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/graceful-fs": {
++      "version": "4.2.11",
++      "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz",
++      "integrity": "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==",
++      "license": "ISC"
++    },
++    "node_modules/jose": {
++      "version": "5.10.0",
++      "resolved": "https://registry.npmjs.org/jose/-/jose-5.10.0.tgz",
++      "integrity": "sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==",
++      "license": "MIT",
++      "funding": {
++        "url": "https://github.com/sponsors/panva"
++      }
++    },
++    "node_modules/js-tokens": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz",
++      "integrity": "sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==",
++      "license": "MIT"
++    },
++    "node_modules/loose-envify": {
++      "version": "1.4.0",
++      "resolved": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
++      "integrity": "sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==",
++      "license": "MIT",
++      "dependencies": {
++        "js-tokens": "^3.0.0 || ^4.0.0"
++      },
++      "bin": {
++        "loose-envify": "cli.js"
++      }
++    },
++    "node_modules/nanoid": {
++      "version": "3.3.19",
++      "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.19.tgz",
++      "integrity": "sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==",
++      "funding": [
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "bin": {
++        "nanoid": "bin/nanoid.cjs"
++      },
++      "engines": {
++        "node": "^10 || ^12 || ^13.7 || ^14 || >=15.0.1"
++      }
++    },
++    "node_modules/next": {
++      "version": "14.2.32",
++      "resolved": "https://registry.npmjs.org/next/-/next-14.2.32.tgz",
++      "integrity": "sha512-fg5g0GZ7/nFc09X8wLe6pNSU8cLWbLRG3TZzPJ1BJvi2s9m7eF991se67wliM9kR5yLHRkyGKU49MMx58s3LJg==",
++      "deprecated": "This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.",
++      "license": "MIT",
++      "dependencies": {
++        "@next/env": "14.2.32",
++        "@swc/helpers": "0.5.5",
++        "busboy": "1.6.0",
++        "caniuse-lite": "^1.0.30001579",
++        "graceful-fs": "^4.2.11",
++        "postcss": "8.4.31",
++        "styled-jsx": "5.1.1"
++      },
++      "bin": {
++        "next": "dist/bin/next"
++      },
++      "engines": {
++        "node": ">=18.17.0"
++      },
++      "optionalDependencies": {
++        "@next/swc-darwin-arm64": "14.2.32",
++        "@next/swc-darwin-x64": "14.2.32",
++        "@next/swc-linux-arm64-gnu": "14.2.32",
++        "@next/swc-linux-arm64-musl": "14.2.32",
++        "@next/swc-linux-x64-gnu": "14.2.32",
++        "@next/swc-linux-x64-musl": "14.2.32",
++        "@next/swc-win32-arm64-msvc": "14.2.32",
++        "@next/swc-win32-ia32-msvc": "14.2.32",
++        "@next/swc-win32-x64-msvc": "14.2.32"
++      },
++      "peerDependencies": {
++        "@opentelemetry/api": "^1.1.0",
++        "@playwright/test": "^1.41.2",
++        "react": "^18.2.0",
++        "react-dom": "^18.2.0",
++        "sass": "^1.3.0"
++      },
++      "peerDependenciesMeta": {
++        "@opentelemetry/api": {
++          "optional": true
++        },
++        "@playwright/test": {
++          "optional": true
++        },
++        "sass": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/pg": {
++      "version": "8.23.1",
++      "resolved": "https://registry.npmjs.org/pg/-/pg-8.23.1.tgz",
++      "integrity": "sha512-aL96AHANtWjPLDOLqnhx+ngp9+UK7ETEU8VJrDCGvsSSi/mGLcWYsS6Herg7lmaBJe4uwrfqsa7gTEFaSizDoQ==",
++      "license": "MIT",
++      "dependencies": {
++        "pg-connection-string": "^2.14.1",
++        "pg-pool": "^3.14.0",
++        "pg-protocol": "^1.16.1",
++        "pg-types": "2.2.0",
++        "pgpass": "1.0.5"
++      },
++      "engines": {
++        "node": ">= 16.0.0"
++      },
++      "optionalDependencies": {
++        "pg-cloudflare": "^1.4.1"
++      },
++      "peerDependencies": {
++        "pg-native": ">=3.0.1"
++      },
++      "peerDependenciesMeta": {
++        "pg-native": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/pg-cloudflare": {
++      "version": "1.4.1",
++      "resolved": "https://registry.npmjs.org/pg-cloudflare/-/pg-cloudflare-1.4.1.tgz",
++      "integrity": "sha512-6PQbsFWZcp9EmJEwy5cGQ2La+AMWpP46lgbb8X+U/XsHIUweYDNCpeuKck5RxL2MdVFi7krbbEi5nX4Zh7JhrQ==",
++      "license": "MIT",
++      "optional": true
++    },
++    "node_modules/pg-connection-string": {
++      "version": "2.14.1",
++      "resolved": "https://registry.npmjs.org/pg-connection-string/-/pg-connection-string-2.14.1.tgz",
++      "integrity": "sha512-qR3kGNPBLpCNtz0evbKA0Y/MRFXwSSdT+pTJvYp/bXTcReZbvX1kzF0IyTc1QnxqF7AZbOeBhNL8R5mYQZV/MA==",
++      "license": "MIT"
++    },
++    "node_modules/pg-int8": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/pg-int8/-/pg-int8-1.0.1.tgz",
++      "integrity": "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==",
++      "license": "ISC",
++      "engines": {
++        "node": ">=4.0.0"
++      }
++    },
++    "node_modules/pg-pool": {
++      "version": "3.14.0",
++      "resolved": "https://registry.npmjs.org/pg-pool/-/pg-pool-3.14.0.tgz",
++      "integrity": "sha512-gKtPkFdQPU3DksooVLi9LsjZxrsBUZIpa+7aVx+LV5pNh0KzP4Zleud2po+ConrxbuXGBJ6Hfer6hdgpIBpBaw==",
++      "license": "MIT",
++      "peerDependencies": {
++        "pg": ">=8.0"
++      }
++    },
++    "node_modules/pg-protocol": {
++      "version": "1.16.1",
++      "resolved": "https://registry.npmjs.org/pg-protocol/-/pg-protocol-1.16.1.tgz",
++      "integrity": "sha512-p9VOFMiHB/ZbJATetbg+99PxssTVSQRnyuPSQ67mN1+1KBOjZaZ83ZQzltnxPhJwSsC3nwVjJ10DVJlerbFzLg==",
++      "license": "MIT"
++    },
++    "node_modules/pg-types": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz",
++      "integrity": "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==",
++      "license": "MIT",
++      "dependencies": {
++        "pg-int8": "1.0.1",
++        "postgres-array": "~2.0.0",
++        "postgres-bytea": "~1.0.0",
++        "postgres-date": "~1.0.4",
++        "postgres-interval": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=4"
++      }
++    },
++    "node_modules/pgpass": {
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz",
++      "integrity": "sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug==",
++      "license": "MIT",
++      "dependencies": {
++        "split2": "^4.1.0"
++      }
++    },
++    "node_modules/picocolors": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
++      "integrity": "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==",
++      "license": "ISC"
++    },
++    "node_modules/postcss": {
++      "version": "8.4.31",
++      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.4.31.tgz",
++      "integrity": "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==",
++      "funding": [
++        {
++          "type": "opencollective",
++          "url": "https://opencollective.com/postcss/"
++        },
++        {
++          "type": "tidelift",
++          "url": "https://tidelift.com/funding/github/npm/postcss"
++        },
++        {
++          "type": "github",
++          "url": "https://github.com/sponsors/ai"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "nanoid": "^3.3.6",
++        "picocolors": "^1.0.0",
++        "source-map-js": "^1.0.2"
++      },
++      "engines": {
++        "node": "^10 || ^12 || >=14"
++      }
++    },
++    "node_modules/postgres-array": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/postgres-array/-/postgres-array-2.0.0.tgz",
++      "integrity": "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=4"
++      }
++    },
++    "node_modules/postgres-bytea": {
++      "version": "1.0.1",
++      "resolved": "https://registry.npmjs.org/postgres-bytea/-/postgres-bytea-1.0.1.tgz",
++      "integrity": "sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/postgres-date": {
++      "version": "1.0.7",
++      "resolved": "https://registry.npmjs.org/postgres-date/-/postgres-date-1.0.7.tgz",
++      "integrity": "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/postgres-interval": {
++      "version": "1.2.0",
++      "resolved": "https://registry.npmjs.org/postgres-interval/-/postgres-interval-1.2.0.tgz",
++      "integrity": "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==",
++      "license": "MIT",
++      "dependencies": {
++        "xtend": "^4.0.0"
++      },
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/react": {
++      "version": "18.3.1",
++      "resolved": "https://registry.npmjs.org/react/-/react-18.3.1.tgz",
++      "integrity": "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==",
++      "license": "MIT",
++      "dependencies": {
++        "loose-envify": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/react-dom": {
++      "version": "18.3.1",
++      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-18.3.1.tgz",
++      "integrity": "sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==",
++      "license": "MIT",
++      "dependencies": {
++        "loose-envify": "^1.1.0",
++        "scheduler": "^0.23.2"
++      },
++      "peerDependencies": {
++        "react": "^18.3.1"
++      }
++    },
++    "node_modules/scheduler": {
++      "version": "0.23.2",
++      "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.23.2.tgz",
++      "integrity": "sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==",
++      "license": "MIT",
++      "dependencies": {
++        "loose-envify": "^1.1.0"
++      }
++    },
++    "node_modules/source-map-js": {
++      "version": "1.2.2",
++      "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz",
++      "integrity": "sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==",
++      "license": "BSD-3-Clause",
++      "engines": {
++        "node": ">=0.10.0"
++      }
++    },
++    "node_modules/split2": {
++      "version": "4.2.0",
++      "resolved": "https://registry.npmjs.org/split2/-/split2-4.2.0.tgz",
++      "integrity": "sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==",
++      "license": "ISC",
++      "engines": {
++        "node": ">= 10.x"
++      }
++    },
++    "node_modules/streamsearch": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz",
++      "integrity": "sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==",
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
++    "node_modules/styled-jsx": {
++      "version": "5.1.1",
++      "resolved": "https://registry.npmjs.org/styled-jsx/-/styled-jsx-5.1.1.tgz",
++      "integrity": "sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==",
++      "license": "MIT",
++      "dependencies": {
++        "client-only": "0.0.1"
++      },
++      "engines": {
++        "node": ">= 12.0.0"
++      },
++      "peerDependencies": {
++        "react": ">= 16.8.0 || 17.x.x || ^18.0.0-0"
++      },
++      "peerDependenciesMeta": {
++        "@babel/core": {
++          "optional": true
++        },
++        "babel-plugin-macros": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/tslib": {
++      "version": "2.8.1",
++      "resolved": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
++      "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
++      "license": "0BSD"
++    },
++    "node_modules/typescript": {
++      "version": "5.9.3",
++      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
++      "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "bin": {
++        "tsc": "bin/tsc",
++        "tsserver": "bin/tsserver"
++      },
++      "engines": {
++        "node": ">=14.17"
++      }
++    },
++    "node_modules/undici-types": {
++      "version": "6.21.0",
++      "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz",
++      "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/xtend": {
++      "version": "4.0.2",
++      "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
++      "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=0.4"
++      }
++    }
++  }
++}
+diff --git a/package.json b/package.json
+new file mode 100644
+index 0000000..cec0091
+--- /dev/null
++++ b/package.json
+@@ -0,0 +1,27 @@
++{
++  "name": "alpha-classes",
++  "version": "1.0.0",
++  "private": true,
++  "scripts": {
++    "dev": "next dev",
++    "build": "next build",
++    "start": "next start",
++    "lint": "next lint"
++  },
++  "dependencies": {
++    "bcryptjs": "^2.4.3",
++    "jose": "^5.9.6",
++    "next": "14.2.32",
++    "pg": "^8.13.1",
++    "react": "^18.3.1",
++    "react-dom": "^18.3.1"
++  },
++  "devDependencies": {
++    "@types/bcryptjs": "^2.4.6",
++    "@types/node": "^20.14.0",
++    "@types/pg": "^8.11.6",
++    "@types/react": "^18.3.5",
++    "@types/react-dom": "^18.3.0",
++    "typescript": "^5.5.4"
++  }
++}
+diff --git a/tsconfig.json b/tsconfig.json
+new file mode 100644
+index 0000000..455bf35
+--- /dev/null
++++ b/tsconfig.json
+@@ -0,0 +1,20 @@
++{
++  "compilerOptions": {
++    "lib": ["dom", "dom.iterable", "esnext"],
++    "allowJs": true,
++    "skipLibCheck": true,
++    "strict": true,
++    "noEmit": true,
++    "esModuleInterop": true,
++    "module": "esnext",
++    "moduleResolution": "bundler",
++    "resolveJsonModule": true,
++    "isolatedModules": true,
++    "jsx": "preserve",
++    "incremental": true,
++    "plugins": [{ "name": "next" }],
++    "paths": { "@/*": ["./*"] }
++  },
++  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
++  "exclude": ["node_modules"]
++}
