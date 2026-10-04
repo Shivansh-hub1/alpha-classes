@@ -2,17 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import MaterialsUpload from "@/components/MaterialsUpload";
 
 export type Enquiry = { id: number; name: string; email: string; phone: string; message: string; status: string; created_at: string; course: string | null };
 export type Student = { id: number; name: string; email: string; phone: string; created_at: string };
 export type ResultRow = { id: number; student: string; test: string; score: number; total: number; created_at: string };
-export type AdminData = { enquiries: Enquiry[]; students: Student[]; results: ResultRow[] };
+export type MaterialRow = { id: number; title: string; category: string; kind: string; description: string; url: string | null; file_name: string | null; file_size: number | null; downloads: number; created_at: string };
+export type AdminData = { enquiries: Enquiry[]; students: Student[]; results: ResultRow[]; materials: MaterialRow[] };
 
 const STATUSES = ["new", "contacted", "joined", "closed"] as const;
 
 export default function AdminPanel({ data }: { data: AdminData }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"enquiries" | "students" | "results">("enquiries");
+  const [tab, setTab] = useState<"enquiries" | "materials" | "students" | "results">("enquiries");
   const [busy, setBusy] = useState<number | null>(null);
 
   async function setStatus(id: number, status: string) {
@@ -26,6 +28,14 @@ export default function AdminPanel({ data }: { data: AdminData }) {
     router.refresh();
   }
 
+  async function deleteMaterial(id: number) {
+    if (!confirm("Delete this material? Students will no longer see it.")) return;
+    setBusy(id);
+    await fetch(`/api/admin/materials/${id}`, { method: "DELETE" });
+    setBusy(null);
+    router.refresh();
+  }
+
   const counts = { new: data.enquiries.filter((e) => e.status === "new").length };
 
   return (
@@ -34,9 +44,34 @@ export default function AdminPanel({ data }: { data: AdminData }) {
         <button className={tab === "enquiries" ? "active" : ""} onClick={() => setTab("enquiries")}>
           Enquiries ({data.enquiries.length}{counts.new > 0 ? ` · ${counts.new} new` : ""})
         </button>
+        <button className={tab === "materials" ? "active" : ""} onClick={() => setTab("materials")}>Free Materials ({data.materials.length})</button>
         <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>Students ({data.students.length})</button>
         <button className={tab === "results" ? "active" : ""} onClick={() => setTab("results")}>Test Results ({data.results.length})</button>
       </div>
+
+      {tab === "materials" && (
+        <div>
+          <h3 style={{ fontSize: 18, marginBottom: 12 }}>Upload new material</h3>
+          <MaterialsUpload />
+          <h3 style={{ fontSize: 18, margin: "28px 0 12px" }}>Published materials</h3>
+          {data.materials.length === 0 ? <p className="muted">No materials yet — upload the first one above.</p> :
+          <table className="data">
+            <thead><tr><th>Title</th><th>Category</th><th>Type</th><th>Downloads</th><th>Added</th><th></th></tr></thead>
+            <tbody>
+              {data.materials.map((m) => (
+                <tr key={m.id} style={{ opacity: busy === m.id ? 0.5 : 1 }}>
+                  <td><b>{m.title}</b>{m.description ? <><br /><span className="small muted">{m.description}</span></> : null}</td>
+                  <td><span className="tag new">{m.category}</span></td>
+                  <td className="small">{m.kind === "pdf" ? `📄 PDF · ${m.file_name || ""}` : "🔗 Link"}</td>
+                  <td>{m.downloads}</td>
+                  <td className="small muted">{new Date(m.created_at).toLocaleDateString("en-IN")}</td>
+                  <td><button className="status-btn" onClick={() => deleteMaterial(m.id)} disabled={busy === m.id} style={{ color: "#b42318" }}>Delete</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>}
+        </div>
+      )}
 
       {tab === "enquiries" && (
         data.enquiries.length === 0 ? <p className="muted">No enquiries yet.</p> :

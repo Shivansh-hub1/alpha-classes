@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getCourses, getTests } from "@/lib/db";
+import { getCourses, getTests, getMaterials } from "@/lib/db";
 import DemoModal from "@/components/DemoModal";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const [courses, tests] = await Promise.all([getCourses(), getTests()]);
+  const [courses, tests, materials] = await Promise.all([getCourses(), getTests(), getMaterials(3)]);
   const featured = courses.find((c) => c.featured) || courses[0];
 
   return (
@@ -95,6 +95,37 @@ export default async function Home() {
                   <h3>{t.title}</h3>
                   <p>{t.question_count} questions · {t.duration_min} minutes · Instant result</p>
                   <Link className="btn btn-primary" href={`/tests/${t.slug}`}>Start Test</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="materials" style={{ paddingTop: 20 }}>
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <h2>Free Study Material 🎁</h2>
+              <p>Test series PDFs, books and notes — free for every student.</p>
+            </div>
+            <Link href="/materials" style={{ color: "#f56600", fontWeight: 800 }}>View all →</Link>
+          </div>
+          <div className="grid">
+            {materials.map((m) => (
+              <article key={m.id} className="card">
+                <div className="card-top">
+                  <div className="icon">{m.category === "test-series" ? "📝" : m.category === "book" ? "📗" : "🗒️"}</div>
+                  <span className="level">{m.kind === "pdf" ? "PDF" : "Drive Link"}</span>
+                </div>
+                <div className="card-body">
+                  <h3>{m.title}</h3>
+                  <p>{m.description || "Free study material from Alpha Classes."}</p>
+                  {m.kind === "pdf" ? (
+                    <a className="btn btn-primary" href={`/api/materials/${m.id}/download`}>⬇ Download Free</a>
+                  ) : (
+                    <a className="btn btn-primary" href={m.url || "#"} target="_blank" rel="noopener noreferrer">🔗 Open Link</a>
+                  )}
                 </div>
               </article>
             ))}

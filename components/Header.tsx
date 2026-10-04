@@ -11,6 +11,7 @@ export default function Header() {
         <Link className="logo" href="/"><span className="logo-mark">A</span> ALPHA CLASSES</Link>
         <nav className="nav-links">
           <Link href="/courses">Courses</Link>
+          <Link href="/materials">Free Materials</Link>
           <Link href="/#features">Why Alpha</Link>
           <Link href="/tests">Test Series</Link>
           <Link href="/about">About</Link>
@@ -24,6 +25,7 @@ export default function Header() {
       </div>
       <div className={"mobile-menu" + (open ? " open" : "")} onClick={() => setOpen(false)}>
         <Link href="/courses">Courses</Link>
+        <Link href="/materials">Free Materials</Link>
         <Link href="/#features">Why Alpha</Link>
         <Link href="/tests">Test Series</Link>
         <Link href="/about">About</Link>

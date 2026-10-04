@@ -2,7 +2,11 @@ import { Pool } from "pg";
 
 const connectionString = process.env.DATABASE_URL || "";
 
-const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promise<void> };
+const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promise<void>; initVersion?: number };
+
+// bump this when SCHEMA gains new tables/columns — ensures migrations
+// re-run even inside warm server instances
+const SCHEMA_VERSION = 2;
 
 export const pool =
   globalForDb.pool ??
@@ -80,7 +84,21 @@ CREATE TABLE IF NOT EXISTS test_results (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_id);
+CREATE TABLE IF NOT EXISTS materials (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'notes',
+  kind TEXT NOT NULL DEFAULT 'pdf',
+  description TEXT NOT NULL DEFAULT '',
+  url TEXT,
+  file_data BYTEA,
+  file_name TEXT,
+  file_size INT,
+  downloads INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE INDEX IF NOT EXISTS idx_enquiries_created ON enquiries(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at DESC);
 `;
 
 const COURSES: Array<[string, string, string, string, string, string, number, number, boolean, number]> = [
@@ -160,7 +178,8 @@ async function migrate() {
 }
 
 export function ensureDb(): Promise<void> {
-  if (!globalForDb.initPromise) {
+  if (!globalForDb.initPromise || globalForDb.initVersion !== SCHEMA_VERSION) {
+    globalForDb.initVersion = SCHEMA_VERSION;
     globalForDb.initPromise = migrate().catch((e) => {
       globalForDb.initPromise = undefined;
       throw e;
@@ -172,6 +191,10 @@ export function ensureDb(): Promise<void> {
 // ---------- shared types ----------
 export type Course = { id: number; slug: string; title: string; level: string; icon: string; description: string; highlights: string; classes_count: number; price: number; featured: boolean };
 export type Test = { id: number; slug: string; title: string; description: string; duration_min: number; question_count: number };
+export type Material = {
+  id: number; title: string; category: string; kind: string; description: string;
+  url: string | null; file_name: string | null; file_size: number | null; downloads: number; created_at: string;
+};
 
 // ---------- queries ----------
 export async function getCourses(): Promise<Course[]> {
@@ -205,4 +228,13 @@ export async function getTestWithQuestions(slug: string) {
     "SELECT id, q_text, options, correct FROM questions WHERE test_id = $1 ORDER BY sort, id", [test.id]
   );
   return { test, questions: qs.rows };
+}
+
+export async function getMaterials(limit = 200): Promise<Material[]> {
+  await ensureDb();
+  const { rows } = await pool.query<Material>(
+    "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT $1",
+    [limit]
+  );
+  return rows;
 }

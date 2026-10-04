@@ -1,0 +1,845 @@
+diff --git a/README.md b/README.md
+index 3b9069b..bae1d16 100644
+--- a/README.md
++++ b/README.md
+@@ -11,6 +11,8 @@ Design is preserved from the approved frontend preview; everything now works for
+ - **Student accounts** — signup / login / logout (bcrypt + secure JWT cookies)
+ - **Student dashboard** — enrolled courses, test history, best score
+ - **Enquiry / lead capture** — contact form + per-course enquiry forms
++- **Free Materials** (`/materials`) — admin can upload test series/book PDFs (up to 4 MB) or add Google Drive links; students download free, download counts tracked
++- **Loading states** — orange top progress bar on every page navigation + page loaders on data pages
+ - **Admin panel** (`/admin`) — view enquiries (with status tracking: new → contacted → joined → closed), students, test results
+ - **SEO** — per-page titles/descriptions, OpenGraph + Twitter cards, dynamic `sitemap.xml`, `robots.txt`, JSON-LD (EducationalOrganization + Course + FAQ), web manifest, OG image
+ - **Custom 404 page** — branded, matching design
+@@ -28,6 +30,8 @@ Set these in **Vercel → Project → Settings → Environment Variables**:
+ | `NEXT_PUBLIC_SITE_URL` | Your final domain, e.g. `https://alphaclasses.com` (used for SEO/sitemap) |
+ | `NEXT_PUBLIC_DEMO_VIDEO_ID` | (Optional) YouTube video ID for the homepage demo popup |
+ 
++> **Material uploads:** PDFs up to 4 MB are stored in the Neon database (no extra setup needed). For large books, use the Google Drive link option in the admin panel. Need bigger direct uploads? Vercel Blob is the natural next step.
++
+ > Tables and sample data (6 courses, 3 tests with real questions) are created
+ > automatically on the first request — no manual migration needed.
+ 
+diff --git a/app/admin/loading.tsx b/app/admin/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/admin/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/admin/page.tsx b/app/admin/page.tsx
+index 1193da1..25e8c15 100644
+--- a/app/admin/page.tsx
++++ b/app/admin/page.tsx
+@@ -28,11 +28,15 @@ export default async function AdminPage() {
+      FROM test_results r JOIN students s ON s.id = r.student_id JOIN tests t ON t.id = r.test_id
+      ORDER BY r.created_at DESC LIMIT 200`
+   );
++  const materials = await pool.query(
++    "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT 200"
++  );
+ 
+   const data: AdminData = {
+     enquiries: enquiries.rows,
+     students: students.rows,
+     results: results.rows,
++    materials: materials.rows,
+   };
+ 
+   return (
+diff --git a/app/api/admin/materials/[id]/route.ts b/app/api/admin/materials/[id]/route.ts
+new file mode 100644
+index 0000000..d10c69c
+--- /dev/null
++++ b/app/api/admin/materials/[id]/route.ts
+@@ -0,0 +1,20 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++import { isAdmin } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
++  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++  const id = Number(params.id);
++  if (!id) return NextResponse.json({ error: "Invalid id." }, { status: 400 });
++  try {
++    await ensureDb();
++    await pool.query("DELETE FROM materials WHERE id = $1", [id]);
++    return NextResponse.json({ ok: true });
++  } catch (e) {
++    console.error("material delete error", e);
++    return NextResponse.json({ error: "Delete failed." }, { status: 500 });
++  }
++}
+diff --git a/app/api/admin/materials/route.ts b/app/api/admin/materials/route.ts
+new file mode 100644
+index 0000000..a7afa00
+--- /dev/null
++++ b/app/api/admin/materials/route.ts
+@@ -0,0 +1,60 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++import { isAdmin } from "@/lib/auth";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++const MAX_PDF_BYTES = 4 * 1024 * 1024; // 4 MB — Vercel request body limit
++const CATEGORIES = new Set(["test-series", "book", "notes"]);
++
++export async function POST(req: Request) {
++  if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
++
++  try {
++    const form = await req.formData().catch(() => null);
++    if (!form) return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
++
++    const title = String(form.get("title") || "").trim();
++    const category = String(form.get("category") || "notes");
++    const description = String(form.get("description") || "").trim().slice(0, 1000);
++    const url = String(form.get("url") || "").trim();
++    const file = form.get("file");
++
++    if (title.length < 3) return NextResponse.json({ error: "Please enter a title (min 3 characters)." }, { status: 400 });
++    if (!CATEGORIES.has(category)) return NextResponse.json({ error: "Invalid category." }, { status: 400 });
++
++    await ensureDb();
++
++    if (file instanceof File && file.size > 0) {
++      if (file.type !== "application/pdf") {
++        return NextResponse.json({ error: "Only PDF files can be uploaded." }, { status: 400 });
++      }
++      if (file.size > MAX_PDF_BYTES) {
++        return NextResponse.json({ error: "PDF is larger than 4 MB. Use a Google Drive link for big files." }, { status: 400 });
++      }
++      const buffer = Buffer.from(await file.arrayBuffer());
++      await pool.query(
++        "INSERT INTO materials (title, category, kind, description, file_data, file_name, file_size) VALUES ($1,$2,'pdf',$3,$4,$5,$6)",
++        [title, category, description, buffer, file.name, file.size]
++      );
++      return NextResponse.json({ ok: true });
++    }
++
++    if (url) {
++      if (!/^https:\/\/[^\s]+$/i.test(url)) {
++        return NextResponse.json({ error: "Please enter a valid https:// link (Google Drive or any URL)." }, { status: 400 });
++      }
++      await pool.query(
++        "INSERT INTO materials (title, category, kind, description, url) VALUES ($1,$2,'link',$3,$4)",
++        [title, category, description, url]
++      );
++      return NextResponse.json({ ok: true });
++    }
++
++    return NextResponse.json({ error: "Attach a PDF file or paste a link." }, { status: 400 });
++  } catch (e) {
++    console.error("material upload error", e);
++    return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
++  }
++}
+diff --git a/app/api/materials/[id]/download/route.ts b/app/api/materials/[id]/download/route.ts
+new file mode 100644
+index 0000000..02e337a
+--- /dev/null
++++ b/app/api/materials/[id]/download/route.ts
+@@ -0,0 +1,34 @@
++import { NextResponse } from "next/server";
++import { pool, ensureDb } from "@/lib/db";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++export async function GET(_req: Request, { params }: { params: { id: string } }) {
++  const id = Number(params.id);
++  if (!id) return NextResponse.json({ error: "Invalid id." }, { status: 400 });
++  try {
++    await ensureDb();
++    const { rows } = await pool.query<{ file_data: Buffer; file_name: string; kind: string; url: string | null }>(
++      "SELECT file_data, file_name, kind, url FROM materials WHERE id = $1", [id]
++    );
++    const m = rows[0];
++    if (!m) return NextResponse.json({ error: "Material not found." }, { status: 404 });
++    if (m.kind === "link") {
++      return NextResponse.json({ error: "This material is an external link, not a download." }, { status: 400 });
++    }
++    await pool.query("UPDATE materials SET downloads = downloads + 1 WHERE id = $1", [id]);
++
++    const safeName = (m.file_name || "material.pdf").replace(/[^\w.\- ]+/g, "_");
++    return new Response(new Uint8Array(m.file_data), {
++      headers: {
++        "Content-Type": "application/pdf",
++        "Content-Disposition": `attachment; filename="${safeName}"`,
++        "Cache-Control": "public, max-age=3600",
++      },
++    });
++  } catch (e) {
++    console.error("material download error", e);
++    return NextResponse.json({ error: "Download failed." }, { status: 500 });
++  }
++}
+diff --git a/app/courses/[slug]/loading.tsx b/app/courses/[slug]/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/courses/[slug]/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/courses/loading.tsx b/app/courses/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/courses/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/dashboard/loading.tsx b/app/dashboard/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/dashboard/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/globals.css b/app/globals.css
+index f013841..1141ca4 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -125,3 +125,8 @@ table.data tr:last-child td{border-bottom:0}
+ .prose h3{margin:22px 0 8px;font-size:18px}
+ @media(max-width:850px){.nav-links{display:none}.burger{display:block}.hero-grid{grid-template-columns:1fr}.hero{padding-top:55px}h1{font-size:45px}.grid,.feature-grid{grid-template-columns:1fr 1fr}.stats-grid{grid-template-columns:repeat(2,1fr);gap:25px}.footer-grid{grid-template-columns:1fr 1fr}.cta{display:block}.cta .btn{margin-top:20px}.course-hero{grid-template-columns:1fr}.buy-card{position:static}}
+ @media(max-width:550px){.nav-actions .btn-outline{display:none}.grid,.feature-grid{grid-template-columns:1fr}.section{padding:52px 0}.section-head{display:block}.section-head p{margin-top:8px}.hero-card{margin-top:10px}.video{height:230px}.footer-grid{grid-template-columns:1fr}h1{font-size:39px}.page-head h1{font-size:31px}}
++/* page loading bar */
++.page-loader{padding:90px 0 40px}
++.page-loader-bar{height:4px;width:100%;max-width:560px;margin:0 auto;border-radius:999px;background:#f1f1f3;position:relative;overflow:hidden}
++.page-loader-bar:after{content:"";position:absolute;left:-40%;top:0;bottom:0;width:40%;border-radius:999px;background:var(--primary);animation:loadslide 1.1s ease-in-out infinite}
++@keyframes loadslide{0%{left:-40%}100%{left:100%}}
+diff --git a/app/layout.tsx b/app/layout.tsx
+index 104983e..17e46bc 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,6 +1,7 @@
+ import type { Metadata, Viewport } from "next";
+ import "./globals.css";
+ import Header from "@/components/Header";
++import ProgressBar from "@/components/ProgressBar";
+ import Footer from "@/components/Footer";
+ 
+ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app";
+@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode })
+     <html lang="en">
+       <body>
+         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
++        <ProgressBar />
+         <Header />
+         {children}
+         <Footer />
+diff --git a/app/loading.tsx b/app/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/materials/loading.tsx b/app/materials/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/materials/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/materials/page.tsx b/app/materials/page.tsx
+new file mode 100644
+index 0000000..d2f9ff0
+--- /dev/null
++++ b/app/materials/page.tsx
+@@ -0,0 +1,36 @@
++import Link from "next/link";
++import type { Metadata } from "next";
++import { getMaterials } from "@/lib/db";
++import MaterialsGrid from "@/components/MaterialsGrid";
++
++export const dynamic = "force-dynamic";
++
++export const metadata: Metadata = {
++  title: "Free Study Material — Test Series PDFs, Books & Notes",
++  description: "Download free study material from Alpha Classes: test series PDFs, book PDFs, notes and Google Drive book links for JEE, NEET, SSC and school exams.",
++  alternates: { canonical: "/materials" },
++};
++
++export default async function MaterialsPage() {
++  const materials = await getMaterials();
++  return (
++    <main className="container">
++      <div className="page-head">
++        <h1>Free Study Material 🎁</h1>
++        <p>Test series PDFs, books and notes — free for every student. New material is added regularly by our teachers.</p>
++      </div>
++      <section className="section" style={{ paddingTop: 30 }}>
++        <MaterialsGrid materials={materials} />
++      </section>
++      <div className="container" style={{ paddingBottom: 50 }}>
++        <section className="cta">
++          <div>
++            <h2>Want full access to everything?</h2>
++            <p>Join a course and get structured material for the full syllabus.</p>
++          </div>
++          <Link className="btn" href="/courses">Explore Courses</Link>
++        </section>
++      </div>
++    </main>
++  );
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index d8eacda..cbb0a2f 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -1,6 +1,6 @@
+ import Link from "next/link";
+ import type { Metadata } from "next";
+-import { getCourses, getTests } from "@/lib/db";
++import { getCourses, getTests, getMaterials } from "@/lib/db";
+ import DemoModal from "@/components/DemoModal";
+ 
+ export const dynamic = "force-dynamic";
+@@ -13,7 +13,7 @@ export const metadata: Metadata = {
+ };
+ 
+ export default async function Home() {
+-  const [courses, tests] = await Promise.all([getCourses(), getTests()]);
++  const [courses, tests, materials] = await Promise.all([getCourses(), getTests(), getMaterials(3)]);
+   const featured = courses.find((c) => c.featured) || courses[0];
+ 
+   return (
+@@ -102,6 +102,37 @@ export default async function Home() {
+         </div>
+       </section>
+ 
++      <section className="section" id="materials" style={{ paddingTop: 20 }}>
++        <div className="container">
++          <div className="section-head">
++            <div>
++              <h2>Free Study Material 🎁</h2>
++              <p>Test series PDFs, books and notes — free for every student.</p>
++            </div>
++            <Link href="/materials" style={{ color: "#f56600", fontWeight: 800 }}>View all →</Link>
++          </div>
++          <div className="grid">
++            {materials.map((m) => (
++              <article key={m.id} className="card">
++                <div className="card-top">
++                  <div className="icon">{m.category === "test-series" ? "📝" : m.category === "book" ? "📗" : "🗒️"}</div>
++                  <span className="level">{m.kind === "pdf" ? "PDF" : "Drive Link"}</span>
++                </div>
++                <div className="card-body">
++                  <h3>{m.title}</h3>
++                  <p>{m.description || "Free study material from Alpha Classes."}</p>
++                  {m.kind === "pdf" ? (
++                    <a className="btn btn-primary" href={`/api/materials/${m.id}/download`}>⬇ Download Free</a>
++                  ) : (
++                    <a className="btn btn-primary" href={m.url || "#"} target="_blank" rel="noopener noreferrer">🔗 Open Link</a>
++                  )}
++                </div>
++              </article>
++            ))}
++          </div>
++        </div>
++      </section>
++
+       <div className="container">
+         <section className="cta" id="about">
+           <div>
+diff --git a/app/sitemap.ts b/app/sitemap.ts
+index d303cd3..0a453a8 100644
+--- a/app/sitemap.ts
++++ b/app/sitemap.ts
+@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+     { url: site, changeFrequency: "weekly", priority: 1 },
+     { url: `${site}/courses`, changeFrequency: "weekly", priority: 0.9 },
+     { url: `${site}/tests`, changeFrequency: "weekly", priority: 0.8 },
++    { url: `${site}/materials`, changeFrequency: "weekly", priority: 0.8 },
+     { url: `${site}/about`, changeFrequency: "monthly", priority: 0.5 },
+     { url: `${site}/contact`, changeFrequency: "monthly", priority: 0.7 },
+     { url: `${site}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+diff --git a/app/tests/[slug]/loading.tsx b/app/tests/[slug]/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/tests/[slug]/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/app/tests/loading.tsx b/app/tests/loading.tsx
+new file mode 100644
+index 0000000..4a89bc7
+--- /dev/null
++++ b/app/tests/loading.tsx
+@@ -0,0 +1,5 @@
++import PageLoader from "@/components/PageLoader";
++
++export default function Loading() {
++  return <PageLoader />;
++}
+diff --git a/components/AdminPanel.tsx b/components/AdminPanel.tsx
+index 6e0af4c..5480d93 100644
+--- a/components/AdminPanel.tsx
++++ b/components/AdminPanel.tsx
+@@ -2,17 +2,19 @@
+ 
+ import { useRouter } from "next/navigation";
+ import { useState } from "react";
++import MaterialsUpload from "@/components/MaterialsUpload";
+ 
+ export type Enquiry = { id: number; name: string; email: string; phone: string; message: string; status: string; created_at: string; course: string | null };
+ export type Student = { id: number; name: string; email: string; phone: string; created_at: string };
+ export type ResultRow = { id: number; student: string; test: string; score: number; total: number; created_at: string };
+-export type AdminData = { enquiries: Enquiry[]; students: Student[]; results: ResultRow[] };
++export type MaterialRow = { id: number; title: string; category: string; kind: string; description: string; url: string | null; file_name: string | null; file_size: number | null; downloads: number; created_at: string };
++export type AdminData = { enquiries: Enquiry[]; students: Student[]; results: ResultRow[]; materials: MaterialRow[] };
+ 
+ const STATUSES = ["new", "contacted", "joined", "closed"] as const;
+ 
+ export default function AdminPanel({ data }: { data: AdminData }) {
+   const router = useRouter();
+-  const [tab, setTab] = useState<"enquiries" | "students" | "results">("enquiries");
++  const [tab, setTab] = useState<"enquiries" | "materials" | "students" | "results">("enquiries");
+   const [busy, setBusy] = useState<number | null>(null);
+ 
+   async function setStatus(id: number, status: string) {
+@@ -26,6 +28,14 @@ export default function AdminPanel({ data }: { data: AdminData }) {
+     router.refresh();
+   }
+ 
++  async function deleteMaterial(id: number) {
++    if (!confirm("Delete this material? Students will no longer see it.")) return;
++    setBusy(id);
++    await fetch(`/api/admin/materials/${id}`, { method: "DELETE" });
++    setBusy(null);
++    router.refresh();
++  }
++
+   const counts = { new: data.enquiries.filter((e) => e.status === "new").length };
+ 
+   return (
+@@ -34,10 +44,35 @@ export default function AdminPanel({ data }: { data: AdminData }) {
+         <button className={tab === "enquiries" ? "active" : ""} onClick={() => setTab("enquiries")}>
+           Enquiries ({data.enquiries.length}{counts.new > 0 ? ` · ${counts.new} new` : ""})
+         </button>
++        <button className={tab === "materials" ? "active" : ""} onClick={() => setTab("materials")}>Free Materials ({data.materials.length})</button>
+         <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>Students ({data.students.length})</button>
+         <button className={tab === "results" ? "active" : ""} onClick={() => setTab("results")}>Test Results ({data.results.length})</button>
+       </div>
+ 
++      {tab === "materials" && (
++        <div>
++          <h3 style={{ fontSize: 18, marginBottom: 12 }}>Upload new material</h3>
++          <MaterialsUpload />
++          <h3 style={{ fontSize: 18, margin: "28px 0 12px" }}>Published materials</h3>
++          {data.materials.length === 0 ? <p className="muted">No materials yet — upload the first one above.</p> :
++          <table className="data">
++            <thead><tr><th>Title</th><th>Category</th><th>Type</th><th>Downloads</th><th>Added</th><th></th></tr></thead>
++            <tbody>
++              {data.materials.map((m) => (
++                <tr key={m.id} style={{ opacity: busy === m.id ? 0.5 : 1 }}>
++                  <td><b>{m.title}</b>{m.description ? <><br /><span className="small muted">{m.description}</span></> : null}</td>
++                  <td><span className="tag new">{m.category}</span></td>
++                  <td className="small">{m.kind === "pdf" ? `📄 PDF · ${m.file_name || ""}` : "🔗 Link"}</td>
++                  <td>{m.downloads}</td>
++                  <td className="small muted">{new Date(m.created_at).toLocaleDateString("en-IN")}</td>
++                  <td><button className="status-btn" onClick={() => deleteMaterial(m.id)} disabled={busy === m.id} style={{ color: "#b42318" }}>Delete</button></td>
++                </tr>
++              ))}
++            </tbody>
++          </table>}
++        </div>
++      )}
++
+       {tab === "enquiries" && (
+         data.enquiries.length === 0 ? <p className="muted">No enquiries yet.</p> :
+         <table className="data">
+diff --git a/components/Footer.tsx b/components/Footer.tsx
+index a864e28..436a3e1 100644
+--- a/components/Footer.tsx
++++ b/components/Footer.tsx
+@@ -14,7 +14,7 @@ export default function Footer() {
+             <div className="footer-links">
+               <Link href="/courses">Courses</Link>
+               <Link href="/tests">Test Series</Link>
+-              <Link href="/courses">Study Material</Link>
++              <Link href="/materials">Free Materials</Link>
+             </div>
+           </div>
+           <div>
+diff --git a/components/Header.tsx b/components/Header.tsx
+index daa4d07..5808430 100644
+--- a/components/Header.tsx
++++ b/components/Header.tsx
+@@ -11,6 +11,7 @@ export default function Header() {
+         <Link className="logo" href="/"><span className="logo-mark">A</span> ALPHA CLASSES</Link>
+         <nav className="nav-links">
+           <Link href="/courses">Courses</Link>
++          <Link href="/materials">Free Materials</Link>
+           <Link href="/#features">Why Alpha</Link>
+           <Link href="/tests">Test Series</Link>
+           <Link href="/about">About</Link>
+@@ -24,6 +25,7 @@ export default function Header() {
+       </div>
+       <div className={"mobile-menu" + (open ? " open" : "")} onClick={() => setOpen(false)}>
+         <Link href="/courses">Courses</Link>
++        <Link href="/materials">Free Materials</Link>
+         <Link href="/#features">Why Alpha</Link>
+         <Link href="/tests">Test Series</Link>
+         <Link href="/about">About</Link>
+diff --git a/components/MaterialsGrid.tsx b/components/MaterialsGrid.tsx
+new file mode 100644
+index 0000000..b48c394
+--- /dev/null
++++ b/components/MaterialsGrid.tsx
+@@ -0,0 +1,63 @@
++"use client";
++
++import { useState } from "react";
++import type { Material } from "@/lib/db";
++
++const CATS = [
++  { id: "all", label: "All" },
++  { id: "test-series", label: "Test Series" },
++  { id: "book", label: "Books" },
++  { id: "notes", label: "Notes" },
++];
++
++function fmtSize(bytes: number | null): string {
++  if (!bytes) return "";
++  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
++  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
++}
++
++export default function MaterialsGrid({ materials }: { materials: Material[] }) {
++  const [cat, setCat] = useState("all");
++  const shown = cat === "all" ? materials : materials.filter((m) => m.category === cat);
++
++  return (
++    <div>
++      <div className="admin-tabs">
++        {CATS.map((c) => (
++          <button key={c.id} className={cat === c.id ? "active" : ""} onClick={() => setCat(c.id)}>
++            {c.label}
++          </button>
++        ))}
++      </div>
++
++      {shown.length === 0 ? (
++        <div className="card" style={{ padding: 28 }}>
++          <p className="muted">No materials here yet — new PDFs and books will appear in this section. Check back soon!</p>
++        </div>
++      ) : (
++        <div className="grid">
++          {shown.map((m) => (
++            <article key={m.id} className="card">
++              <div className="card-top">
++                <div className="icon">{m.category === "test-series" ? "📝" : m.category === "book" ? "📗" : "🗒️"}</div>
++                <span className="level">{m.kind === "pdf" ? "PDF" : "Drive Link"}</span>
++              </div>
++              <div className="card-body">
++                <h3>{m.title}</h3>
++                <p>{m.description || "Free study material from Alpha Classes."}</p>
++                <div className="meta" style={{ marginBottom: 14 }}>
++                  <span>{m.kind === "pdf" ? `📄 ${fmtSize(m.file_size)} · ${m.downloads} downloads` : `🔗 ${m.downloads} opens`}</span>
++                </div>
++                {m.kind === "pdf" ? (
++                  <a className="btn btn-primary" href={`/api/materials/${m.id}/download`}>⬇ Download PDF</a>
++                ) : (
++                  <a className="btn btn-primary" href={m.url || "#"} target="_blank" rel="noopener noreferrer">🔗 Open Link</a>
++                )}
++              </div>
++            </article>
++          ))}
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/components/MaterialsUpload.tsx b/components/MaterialsUpload.tsx
+new file mode 100644
+index 0000000..03f43ba
+--- /dev/null
++++ b/components/MaterialsUpload.tsx
+@@ -0,0 +1,100 @@
++"use client";
++
++import { useRouter } from "next/navigation";
++import { useState } from "react";
++
++export default function MaterialsUpload() {
++  const router = useRouter();
++  const [kind, setKind] = useState<"pdf" | "link">("pdf");
++  const [title, setTitle] = useState("");
++  const [category, setCategory] = useState("test-series");
++  const [description, setDescription] = useState("");
++  const [url, setUrl] = useState("");
++  const [file, setFile] = useState<File | null>(null);
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState("");
++  const [done, setDone] = useState("");
++
++  async function submit(e: React.FormEvent) {
++    e.preventDefault();
++    setError("");
++    setDone("");
++    if (kind === "pdf" && file && file.size > 4 * 1024 * 1024) {
++      setError("This PDF is larger than 4 MB. Use the Google Drive link option for big files.");
++      return;
++    }
++    setBusy(true);
++    try {
++      const form = new FormData();
++      form.set("title", title);
++      form.set("category", category);
++      form.set("description", description);
++      if (kind === "pdf" && file) form.set("file", file);
++      if (kind === "link") form.set("url", url);
++      const res = await fetch("/api/admin/materials", { method: "POST", body: form });
++      const data = await res.json();
++      if (!res.ok) throw new Error(data.error || "Upload failed.");
++      setDone(`✓ "${title}" is now live on the Free Materials page.`);
++      setTitle("");
++      setDescription("");
++      setUrl("");
++      setFile(null);
++      (document.getElementById("mat-file") as HTMLInputElement | null)?.value !== undefined &&
++        ((document.getElementById("mat-file") as HTMLInputElement).value = "");
++      router.refresh();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : "Upload failed.");
++    } finally {
++      setBusy(false);
++    }
++  }
++
++  return (
++    <form className="form" onSubmit={submit} style={{ maxWidth: 620 }}>
++      <div className="admin-tabs" style={{ margin: "0 0 4px" }}>
++        <button type="button" className={kind === "pdf" ? "active" : ""} onClick={() => setKind("pdf")}>📄 Upload PDF</button>
++        <button type="button" className={kind === "link" ? "active" : ""} onClick={() => setKind("link")}>🔗 Google Drive Link</button>
++      </div>
++
++      <div>
++        <label htmlFor="mat-title">Title *</label>
++        <input id="mat-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder={kind === "pdf" ? "e.g. JEE Main Mock Test 1 (PDF)" : "e.g. NCERT Physics Class 11 — Full Book"} />
++      </div>
++
++      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
++        <div>
++          <label htmlFor="mat-cat">Category *</label>
++          <select id="mat-cat" className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
++            <option value="test-series">Test Series</option>
++            <option value="book">Book</option>
++            <option value="notes">Notes</option>
++          </select>
++        </div>
++        {kind === "pdf" ? (
++          <div>
++            <label htmlFor="mat-file">PDF file (max 4 MB) *</label>
++            <input id="mat-file" className="input" type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} required />
++          </div>
++        ) : (
++          <div>
++            <label htmlFor="mat-url">Link (https://) *</label>
++            <input id="mat-url" className="input" value={url} onChange={(e) => setUrl(e.target.value)} required placeholder="https://drive.google.com/…" />
++          </div>
++        )}
++      </div>
++
++      <div>
++        <label htmlFor="mat-desc">Description (optional)</label>
++        <input id="mat-desc" className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description students will see" />
++      </div>
++
++      {error && <div className="form-error">{error}</div>}
++      {done && <div className="form-success">{done}</div>}
++      <div>
++        <button className="btn btn-primary" type="submit" disabled={busy}>
++          {busy ? "Uploading…" : kind === "pdf" ? "Upload Material" : "Add Link"}
++        </button>
++      </div>
++    </form>
++  );
++}
+diff --git a/components/PageLoader.tsx b/components/PageLoader.tsx
+new file mode 100644
+index 0000000..4e78396
+--- /dev/null
++++ b/components/PageLoader.tsx
+@@ -0,0 +1,7 @@
++export default function PageLoader() {
++  return (
++    <div className="page-loader" role="status" aria-label="Loading">
++      <div className="page-loader-bar"></div>
++    </div>
++  );
++}
+diff --git a/components/ProgressBar.tsx b/components/ProgressBar.tsx
+new file mode 100644
+index 0000000..0505366
+--- /dev/null
++++ b/components/ProgressBar.tsx
+@@ -0,0 +1,14 @@
++"use client";
++
++import { AppProgressBar } from "next-nprogress-bar";
++
++export default function ProgressBar() {
++  return (
++    <AppProgressBar
++      height="3px"
++      color="#ff6b00"
++      options={{ showSpinner: false }}
++      shallowRouting
++    />
++  );
++}
+diff --git a/lib/db.ts b/lib/db.ts
+index 6962987..a819a6c 100644
+--- a/lib/db.ts
++++ b/lib/db.ts
+@@ -2,7 +2,11 @@ import { Pool } from "pg";
+ 
+ const connectionString = process.env.DATABASE_URL || "";
+ 
+-const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promise<void> };
++const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promise<void>; initVersion?: number };
++
++// bump this when SCHEMA gains new tables/columns — ensures migrations
++// re-run even inside warm server instances
++const SCHEMA_VERSION = 2;
+ 
+ export const pool =
+   globalForDb.pool ??
+@@ -80,7 +84,21 @@ CREATE TABLE IF NOT EXISTS test_results (
+   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+ );
+ CREATE INDEX IF NOT EXISTS idx_questions_test ON questions(test_id);
++CREATE TABLE IF NOT EXISTS materials (
++  id SERIAL PRIMARY KEY,
++  title TEXT NOT NULL,
++  category TEXT NOT NULL DEFAULT 'notes',
++  kind TEXT NOT NULL DEFAULT 'pdf',
++  description TEXT NOT NULL DEFAULT '',
++  url TEXT,
++  file_data BYTEA,
++  file_name TEXT,
++  file_size INT,
++  downloads INT NOT NULL DEFAULT 0,
++  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
++);
+ CREATE INDEX IF NOT EXISTS idx_enquiries_created ON enquiries(created_at DESC);
++CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at DESC);
+ `;
+ 
+ const COURSES: Array<[string, string, string, string, string, string, number, number, boolean, number]> = [
+@@ -160,7 +178,8 @@ async function migrate() {
+ }
+ 
+ export function ensureDb(): Promise<void> {
+-  if (!globalForDb.initPromise) {
++  if (!globalForDb.initPromise || globalForDb.initVersion !== SCHEMA_VERSION) {
++    globalForDb.initVersion = SCHEMA_VERSION;
+     globalForDb.initPromise = migrate().catch((e) => {
+       globalForDb.initPromise = undefined;
+       throw e;
+@@ -172,6 +191,10 @@ export function ensureDb(): Promise<void> {
+ // ---------- shared types ----------
+ export type Course = { id: number; slug: string; title: string; level: string; icon: string; description: string; highlights: string; classes_count: number; price: number; featured: boolean };
+ export type Test = { id: number; slug: string; title: string; description: string; duration_min: number; question_count: number };
++export type Material = {
++  id: number; title: string; category: string; kind: string; description: string;
++  url: string | null; file_name: string | null; file_size: number | null; downloads: number; created_at: string;
++};
+ 
+ // ---------- queries ----------
+ export async function getCourses(): Promise<Course[]> {
+@@ -206,3 +229,12 @@ export async function getTestWithQuestions(slug: string) {
+   );
+   return { test, questions: qs.rows };
+ }
++
++export async function getMaterials(limit = 200): Promise<Material[]> {
++  await ensureDb();
++  const { rows } = await pool.query<Material>(
++    "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT $1",
++    [limit]
++  );
++  return rows;
++}
+diff --git a/package-lock.json b/package-lock.json
+index 4d85766..617e072 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -11,6 +11,7 @@
+         "bcryptjs": "^2.4.3",
+         "jose": "^5.9.6",
+         "next": "14.2.32",
++        "next-nprogress-bar": "^2.4.7",
+         "pg": "^8.13.1",
+         "react": "^18.3.1",
+         "react-dom": "^18.3.1"
+@@ -399,6 +400,21 @@
+         }
+       }
+     },
++    "node_modules/next-nprogress-bar": {
++      "version": "2.4.7",
++      "resolved": "https://registry.npmjs.org/next-nprogress-bar/-/next-nprogress-bar-2.4.7.tgz",
++      "integrity": "sha512-OeveNQYFBhQhZ+RgrDnvHNUEQfHCmipymmD4AfAVE9pFV4jeWi7/nNK5f0lIk7ODRrtjyyr/n2YpkRbs5kUoMg==",
++      "license": "MIT",
++      "dependencies": {
++        "nprogress-v2": "^1.0.4"
++      }
++    },
++    "node_modules/nprogress-v2": {
++      "version": "1.1.10",
++      "resolved": "https://registry.npmjs.org/nprogress-v2/-/nprogress-v2-1.1.10.tgz",
++      "integrity": "sha512-MypWLNIPIM07SS0bAc/oac0vhVFz9vAHm7d1sj//Pnf3J03LQ3CuWrlDteIu6exq0fIvkDJ6tUDRWLaifsIt5w==",
++      "license": "MIT"
++    },
+     "node_modules/pg": {
+       "version": "8.23.1",
+       "resolved": "https://registry.npmjs.org/pg/-/pg-8.23.1.tgz",
+diff --git a/package.json b/package.json
+index cec0091..4f9c898 100644
+--- a/package.json
++++ b/package.json
+@@ -12,6 +12,7 @@
+     "bcryptjs": "^2.4.3",
+     "jose": "^5.9.6",
+     "next": "14.2.32",
++    "next-nprogress-bar": "^2.4.7",
+     "pg": "^8.13.1",
+     "react": "^18.3.1",
+     "react-dom": "^18.3.1"

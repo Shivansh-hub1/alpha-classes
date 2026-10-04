@@ -28,11 +28,15 @@ export default async function AdminPage() {
      FROM test_results r JOIN students s ON s.id = r.student_id JOIN tests t ON t.id = r.test_id
      ORDER BY r.created_at DESC LIMIT 200`
   );
+  const materials = await pool.query(
+    "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT 200"
+  );
 
   const data: AdminData = {
     enquiries: enquiries.rows,
     students: students.rows,
     results: results.rows,
+    materials: materials.rows,
   };
 
   return (

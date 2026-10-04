@@ -11,6 +11,8 @@ Design is preserved from the approved frontend preview; everything now works for
 - **Student accounts** — signup / login / logout (bcrypt + secure JWT cookies)
 - **Student dashboard** — enrolled courses, test history, best score
 - **Enquiry / lead capture** — contact form + per-course enquiry forms
+- **Free Materials** (`/materials`) — admin can upload test series/book PDFs (up to 4 MB) or add Google Drive links; students download free, download counts tracked
+- **Loading states** — orange top progress bar on every page navigation + page loaders on data pages
 - **Admin panel** (`/admin`) — view enquiries (with status tracking: new → contacted → joined → closed), students, test results
 - **SEO** — per-page titles/descriptions, OpenGraph + Twitter cards, dynamic `sitemap.xml`, `robots.txt`, JSON-LD (EducationalOrganization + Course + FAQ), web manifest, OG image
 - **Custom 404 page** — branded, matching design
@@ -27,6 +29,8 @@ Set these in **Vercel → Project → Settings → Environment Variables**:
 | `ADMIN_PASSWORD` | Password for the `/admin` panel |
 | `NEXT_PUBLIC_SITE_URL` | Your final domain, e.g. `https://alphaclasses.com` (used for SEO/sitemap) |
 | `NEXT_PUBLIC_DEMO_VIDEO_ID` | (Optional) YouTube video ID for the homepage demo popup |
+
+> **Material uploads:** PDFs up to 4 MB are stored in the Neon database (no extra setup needed). For large books, use the Google Drive link option in the admin panel. Need bigger direct uploads? Vercel Blob is the natural next step.
 
 > Tables and sample data (6 courses, 3 tests with real questions) are created
 > automatically on the first request — no manual migration needed.
