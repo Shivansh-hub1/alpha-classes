@@ -78,13 +78,18 @@ export default async function TestPage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
       />
 
-      <nav aria-label="Breadcrumb" style={{ fontSize: 13, color: "#667085", marginBottom: 20 }}>
+      <nav aria-label="Breadcrumb" style={{ fontSize: 13, color: "#667085", marginBottom: 16 }}>
         <Link href="/" style={{ color: "#667085" }}>Home</Link>
         <span style={{ margin: "0 8px" }}>/</span>
         <Link href="/tests" style={{ color: "#667085" }}>Test Series</Link>
         <span style={{ margin: "0 8px" }}>/</span>
         <span style={{ color: "var(--primary)", fontWeight: 700 }}>{data.test.title}</span>
       </nav>
+
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 32, letterSpacing: -1, marginBottom: 6 }}>{data.test.title}</h1>
+        <p className="muted" style={{ fontSize: 15 }}>{data.test.description}</p>
+      </div>
 
       {!session && (
         <div

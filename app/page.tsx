@@ -62,41 +62,69 @@ export default async function Home() {
       <section className="hero">
         <div className="container hero-grid">
           <div>
-            <div className="badge">📍 Best Coaching in Bikapur, Ayodhya</div>
-            <h1>
+            <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--primary)", display: "inline-block" }}></span>
+              <span>🏆 #1 Coaching Institute in Bikapur, Ayodhya</span>
+            </div>
+            <h1 style={{ letterSpacing: "-2px", lineHeight: 1.04 }}>
               Learn Today.
               <br />
               <span>Lead Tomorrow.</span>
             </h1>
-            <p>
-              Welcome to <strong>Alpha Classes Bikapur</strong> — your premier coaching center for CBSE Class 9–10, JEE, NEET, SSC, and career-building skill courses. Expert teachers, smart tests, structured study material, and personal doubt support.
+            <p style={{ fontSize: 18, lineHeight: 1.6, color: "#475467" }}>
+              Welcome to <strong>Alpha Classes Bikapur</strong> — the trusted coaching center for CBSE & UP Board Class 9–10, JEE, NEET, SSC, and career skill courses. Concept-driven teaching, chapter-wise test series, and dedicated teacher doubt support.
             </p>
             <div className="hero-buttons">
-              <Link className="btn btn-primary" href="/courses">
-                Explore Courses →
+              <Link className="btn btn-primary" href="/courses" style={{ padding: "13px 24px", fontSize: 15 }}>
+                Explore Batches & Courses →
               </Link>
-              <Link className="btn btn-outline" href="/tests">
+              <Link className="btn btn-outline" href="/tests" style={{ padding: "13px 20px", fontSize: 15 }}>
                 🧪 Free Test Series
               </Link>
               <DemoModal />
             </div>
-            <div style={{ marginTop: 18, display: "flex", gap: 16, alignItems: "center", fontSize: 13, color: "var(--muted)" }}>
+            <div style={{ marginTop: 20, display: "flex", gap: 16, alignItems: "center", fontSize: 13.5, color: "#4b5563", flexWrap: "wrap" }}>
               <span>✓ Offline & Online Batches</span>
               <span>✓ Free NCERT Material</span>
-              <span>✓ Instant Test Analytics</span>
+              <span>✓ Instant Scorecard & Solutions</span>
+              <span>📍 Near Tehsil Office, Bikapur</span>
             </div>
           </div>
+
           <div className="hero-card">
-            <div className="video">
+            <div className="video" style={{ position: "relative" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 14,
+                  left: 14,
+                  background: "rgba(17, 24, 39, 0.75)",
+                  backdropFilter: "blur(8px)",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  zIndex: 2,
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444" }}></span>
+                <span>Live Class Preview</span>
+              </div>
               <DemoModal variant="play" />
             </div>
             <div className="course-mini">
               <div>
-                <small>Featured Batch in Bikapur</small>
+                <small style={{ color: "#9ca3af" }}>Featured Batch in Bikapur · 2026–27</small>
                 <br />
-                <strong>{featured ? featured.title : "Complete JEE Foundation"}</strong>
+                <strong style={{ fontSize: 16 }}>{featured ? featured.title : "Complete JEE Foundation"}</strong>
               </div>
-              <div className="price">₹{featured ? featured.price : 999}</div>
+              <div className="price" style={{ color: "var(--primary)" }}>
+                ₹{featured ? featured.price.toLocaleString("en-IN") : 999}
+              </div>
             </div>
           </div>
         </div>

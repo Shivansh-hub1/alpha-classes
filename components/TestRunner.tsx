@@ -142,7 +142,7 @@ export default function TestRunner({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14 }}>
             <div>
               <span className="badge" style={{ marginBottom: 8 }}>Test Performance Report</span>
-              <h1 style={{ fontSize: 28, letterSpacing: -1, margin: "4px 0 6px" }}>{title}</h1>
+              <h2 style={{ fontSize: 28, letterSpacing: -1, margin: "4px 0 6px" }}>{title}</h2>
               <p className="muted" style={{ fontSize: 14 }}>
                 Evaluated instant result · {new Date().toLocaleDateString("en-IN", { dateStyle: "medium" })}
               </p>

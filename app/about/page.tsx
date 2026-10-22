@@ -62,6 +62,47 @@ export default function AboutPage() {
           <strong>Alpha Classes Bikapur</strong> was founded with a singular mission: to provide world-class, concept-driven coaching to students in Bikapur and the surrounding Ayodhya region. Whether preparing for CBSE / UP Board foundations in Class 9 and 10, or cracking high-stakes competitive exams like JEE, NEET, and SSC, our students achieve excellence through structured teaching, continuous testing, and personal doubt support.
         </p>
 
+        <h2 style={{ fontSize: 24, margin: "28px 0 10px" }}>Academic Leadership & Mentorship</h2>
+        <div
+          style={{
+            padding: 24,
+            border: "1px solid var(--border)",
+            borderRadius: 18,
+            background: "#fff7ed",
+            display: "flex",
+            gap: 20,
+            alignItems: "flex-start",
+            margin: "18px 0",
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "var(--primary)",
+              color: "#fff",
+              display: "grid",
+              placeItems: "center",
+              fontSize: 32,
+              fontWeight: 900,
+              flexShrink: 0,
+            }}
+          >
+            S
+          </div>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <h3 style={{ fontSize: 20, margin: "0 0 4px", color: "#111827" }}>Er. Shivansh Verma</h3>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--primary)", marginBottom: 8 }}>
+              Founder & Academic Director · Senior Physics & Tech Mentor
+            </div>
+            <p style={{ fontSize: 14.5, color: "#374151", lineHeight: 1.6, margin: 0 }}>
+              &quot;Every student has immense potential if taught with patience and genuine conceptual clarity. At Alpha Classes Bikapur, our focus isn&apos;t rote memorization — it is understanding why formulas work, building test discipline, and guiding every young learner toward their dreams.&quot;
+            </p>
+          </div>
+        </div>
+
         <h2 style={{ fontSize: 24, margin: "28px 0 10px" }}>Our 5-Pillar Teaching Methodology</h2>
         <ul className="hl-list" style={{ gap: 14 }}>
           <li>
