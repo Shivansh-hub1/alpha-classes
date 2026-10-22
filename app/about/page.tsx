@@ -147,6 +147,26 @@ export default function AboutPage() {
           with subject &quot;Faculty Application&quot;.
         </p>
 
+        <h2 style={{ fontSize: 24, margin: "28px 0 10px" }} id="embed">Student & Partner Website Badge</h2>
+        <p>
+          Are you a student, alumnus, educational blogger, or partner institution? You can embed the official Alpha Classes Bikapur badge on your personal blog, study portfolio, or school website:
+        </p>
+        <div style={{ padding: 18, border: "1px solid var(--border)", borderRadius: 14, background: "#f9fafb", marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/badge.svg" alt="Alpha Classes Bikapur Badge" width={220} height={40} style={{ display: "block" }} />
+            <span className="small muted">Live preview of embeddable badge</span>
+          </div>
+          <label style={{ fontSize: 12.5, fontWeight: 700, color: "#475467", display: "block", marginBottom: 6 }}>
+            HTML Embed Code:
+          </label>
+          <pre style={{ background: "#111827", color: "#f9fafb", padding: "12px 14px", borderRadius: 10, fontSize: 12.5, overflowX: "auto" }}>
+            <code>{`<a href="${CANONICAL_SITE_URL}" target="_blank" rel="noopener">
+  <img src="${CANONICAL_SITE_URL}/badge.svg" alt="Alpha Classes Bikapur — Best Coaching in Bikapur" width="220" height="40" />
+</a>`}</code>
+          </pre>
+        </div>
+
         <div style={{ marginTop: 32 }}>
           <Link className="btn btn-primary" href="/courses">
             Explore Courses & Batches →
