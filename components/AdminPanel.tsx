@@ -99,20 +99,47 @@ export default function AdminPanel({ data }: { data: AdminData }) {
   return (
     <div>
       <div className="admin-tabs">
-        <button className={tab === "enquiries" ? "active" : ""} onClick={() => setTab("enquiries")}>
-          Enquiries ({data.enquiries.length}{counts.new > 0 ? ` · ${counts.new} new` : ""})
+        <button
+          type="button"
+          className={tab === "enquiries" ? "active" : ""}
+          onClick={() => setTab("enquiries")}
+        >
+          <span>Enquiries</span>
+          <span className={`tab-badge ${counts.new > 0 ? "badge-new" : ""}`}>
+            {data.enquiries.length}{counts.new > 0 ? ` (${counts.new} new)` : ""}
+          </span>
         </button>
-        <button className={tab === "tests" ? "active" : ""} onClick={() => setTab("tests")}>
-          Tests & Add Test ({data.tests.length})
+        <button
+          type="button"
+          className={tab === "tests" ? "active" : ""}
+          onClick={() => setTab("tests")}
+        >
+          <span>Tests & Add Test</span>
+          <span className="tab-badge">{data.tests.length}</span>
         </button>
-        <button className={tab === "materials" ? "active" : ""} onClick={() => setTab("materials")}>
-          Free Materials ({data.materials.length})
+        <button
+          type="button"
+          className={tab === "materials" ? "active" : ""}
+          onClick={() => setTab("materials")}
+        >
+          <span>Free Materials</span>
+          <span className="tab-badge">{data.materials.length}</span>
         </button>
-        <button className={tab === "students" ? "active" : ""} onClick={() => setTab("students")}>
-          Students ({data.students.length})
+        <button
+          type="button"
+          className={tab === "students" ? "active" : ""}
+          onClick={() => setTab("students")}
+        >
+          <span>Students</span>
+          <span className="tab-badge">{data.students.length}</span>
         </button>
-        <button className={tab === "results" ? "active" : ""} onClick={() => setTab("results")}>
-          Test Results ({data.results.length})
+        <button
+          type="button"
+          className={tab === "results" ? "active" : ""}
+          onClick={() => setTab("results")}
+        >
+          <span>Test Results</span>
+          <span className="tab-badge">{data.results.length}</span>
         </button>
       </div>
 
@@ -129,52 +156,55 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           {data.tests.length === 0 ? (
             <p className="muted">No tests published yet. Create your first test above.</p>
           ) : (
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Test Title / Slug</th>
-                  <th>Category</th>
-                  <th>Questions</th>
-                  <th>Duration</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.tests.map((t) => (
-                  <tr key={t.id} style={{ opacity: busy === t.id ? 0.5 : 1 }}>
-                    <td>
-                      <b>{t.title}</b>
-                      <br />
-                      <span className="small muted">/tests/{t.slug}</span>
-                    </td>
-                    <td>
-                      <span className="tag new">{t.category || "General"}</span>
-                    </td>
-                    <td>{t.question_count} Qs</td>
-                    <td>{t.duration_min} min</td>
-                    <td>
-                      <a
-                        className="status-btn"
-                        href={`/tests/${t.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "var(--primary)", textDecoration: "none" }}
-                      >
-                        Preview
-                      </a>
-                      <button
-                        className="status-btn"
-                        onClick={() => deleteTestItem(t.id, t.title)}
-                        disabled={busy === t.id}
-                        style={{ color: "#b42318" }}
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <div className="table-card">
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Test Title / Slug</th>
+                    <th>Category</th>
+                    <th>Questions</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.tests.map((t) => (
+                    <tr key={t.id} style={{ opacity: busy === t.id ? 0.5 : 1 }}>
+                      <td>
+                        <b>{t.title}</b>
+                        <br />
+                        <span className="small muted">/tests/{t.slug}</span>
+                      </td>
+                      <td>
+                        <span className="tag new">{t.category || "General"}</span>
+                      </td>
+                      <td>{t.question_count} Qs</td>
+                      <td>{t.duration_min} min</td>
+                      <td>
+                        <a
+                          className="status-btn"
+                          href={`/tests/${t.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "var(--primary)", textDecoration: "none" }}
+                        >
+                          Preview
+                        </a>
+                        <button
+                          type="button"
+                          className="status-btn"
+                          onClick={() => deleteTestItem(t.id, t.title)}
+                          disabled={busy === t.id}
+                          style={{ color: "#b42318" }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -188,53 +218,56 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           {data.materials.length === 0 ? (
             <p className="muted">No materials yet — upload the first one above.</p>
           ) : (
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Type</th>
-                  <th>Downloads</th>
-                  <th>Added</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.materials.map((m) => (
-                  <tr key={m.id} style={{ opacity: busy === m.id ? 0.5 : 1 }}>
-                    <td>
-                      <b>{m.title}</b>
-                      {m.description ? (
-                        <>
-                          <br />
-                          <span className="small muted">{m.description}</span>
-                        </>
-                      ) : null}
-                    </td>
-                    <td>
-                      <span className="tag new">{m.category}</span>
-                    </td>
-                    <td className="small">
-                      {m.kind === "pdf" ? `📄 PDF · ${m.file_name || ""}` : "🔗 Link"}
-                    </td>
-                    <td>{m.downloads}</td>
-                    <td className="small muted">
-                      {new Date(m.created_at).toLocaleDateString("en-IN")}
-                    </td>
-                    <td>
-                      <button
-                        className="status-btn"
-                        onClick={() => deleteMaterial(m.id)}
-                        disabled={busy === m.id}
-                        style={{ color: "#b42318" }}
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <div className="table-card">
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Downloads</th>
+                    <th>Added</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.materials.map((m) => (
+                    <tr key={m.id} style={{ opacity: busy === m.id ? 0.5 : 1 }}>
+                      <td>
+                        <b>{m.title}</b>
+                        {m.description ? (
+                          <>
+                            <br />
+                            <span className="small muted">{m.description}</span>
+                          </>
+                        ) : null}
+                      </td>
+                      <td>
+                        <span className="tag new">{m.category}</span>
+                      </td>
+                      <td className="small">
+                        {m.kind === "pdf" ? `📄 PDF · ${m.file_name || ""}` : "🔗 Link"}
+                      </td>
+                      <td>{m.downloads}</td>
+                      <td className="small muted">
+                        {new Date(m.created_at).toLocaleDateString("en-IN")}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="status-btn"
+                          onClick={() => deleteMaterial(m.id)}
+                          disabled={busy === m.id}
+                          style={{ color: "#b42318" }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -244,53 +277,61 @@ export default function AdminPanel({ data }: { data: AdminData }) {
         (data.enquiries.length === 0 ? (
           <p className="muted">No enquiries yet.</p>
         ) : (
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Name / Contact</th>
-                <th>Course</th>
-                <th>Message</th>
-                <th>Status</th>
-                <th>Received</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.enquiries.map((e) => (
-                <tr key={e.id} style={{ opacity: busy === e.id ? 0.5 : 1 }}>
-                  <td>
-                    <b>{e.name}</b>
-                    <br />
-                    <span className="small muted">
-                      {e.email}
-                      <br />📞 {e.phone}
-                    </span>
-                  </td>
-                  <td className="small">{e.course || "—"}</td>
-                  <td className="small" style={{ maxWidth: 220 }}>
-                    {e.message || "—"}
-                  </td>
-                  <td>
-                    <span className={`tag ${e.status}`}>{e.status}</span>
-                    <div style={{ marginTop: 6 }}>
-                      {STATUSES.filter((s) => s !== e.status).map((s) => (
-                        <button
-                          key={s}
-                          className="status-btn"
-                          onClick={() => setStatus(e.id, s)}
-                          disabled={busy === e.id}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="small muted">
-                    {new Date(e.created_at).toLocaleString("en-IN")}
-                  </td>
+          <div className="table-card">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Name / Contact</th>
+                  <th>Course</th>
+                  <th>Message</th>
+                  <th>Status</th>
+                  <th>Received</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.enquiries.map((e) => (
+                  <tr key={e.id} style={{ opacity: busy === e.id ? 0.5 : 1 }}>
+                    <td>
+                      <b style={{ color: "#111827", fontSize: 14.5 }}>{e.name}</b>
+                      <div className="small muted" style={{ marginTop: 4, lineHeight: 1.6 }}>
+                        <a href={`mailto:${e.email}`} style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 2 }}>
+                          {e.email}
+                        </a>
+                        <br />
+                        <a href={`tel:${e.phone}`} style={{ color: "var(--primary)", fontWeight: 700 }}>
+                          📞 {e.phone}
+                        </a>
+                      </div>
+                    </td>
+                    <td className="small" style={{ fontWeight: 600 }}>{e.course || "—"}</td>
+                    <td className="small" style={{ maxWidth: 220, color: "#475467" }}>
+                      {e.message || "—"}
+                    </td>
+                    <td>
+                      <span className={`tag ${e.status}`}>{e.status}</span>
+                      <div className="status-actions">
+                        {STATUSES.filter((s) => s !== e.status).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            className="status-btn"
+                            onClick={() => setStatus(e.id, s)}
+                            disabled={busy === e.id}
+                            title={`Mark enquiry status as ${s}`}
+                          >
+                            → {s}
+                          </button>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="small muted">
+                      {new Date(e.created_at).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ))}
 
       {/* Students Tab */}
@@ -298,30 +339,44 @@ export default function AdminPanel({ data }: { data: AdminData }) {
         (data.students.length === 0 ? (
           <p className="muted">No students yet.</p>
         ) : (
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.students.map((s) => (
-                <tr key={s.id}>
-                  <td>
-                    <b>{s.name}</b>
-                  </td>
-                  <td>{s.email}</td>
-                  <td>{s.phone || "—"}</td>
-                  <td className="small muted">
-                    {new Date(s.created_at).toLocaleDateString("en-IN")}
-                  </td>
+          <div className="table-card">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Joined</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.students.map((s) => (
+                  <tr key={s.id}>
+                    <td>
+                      <b style={{ color: "#111827" }}>{s.name}</b>
+                    </td>
+                    <td>
+                      <a href={`mailto:${s.email}`} style={{ color: "inherit", textDecoration: "underline" }}>
+                        {s.email}
+                      </a>
+                    </td>
+                    <td>
+                      {s.phone ? (
+                        <a href={`tel:${s.phone}`} style={{ color: "var(--primary)", fontWeight: 600 }}>
+                          📞 {s.phone}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="small muted">
+                      {new Date(s.created_at).toLocaleDateString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ))}
 
       {/* Results Tab */}
@@ -329,38 +384,40 @@ export default function AdminPanel({ data }: { data: AdminData }) {
         (data.results.length === 0 ? (
           <p className="muted">No test results yet.</p>
         ) : (
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Test</th>
-                <th>Score</th>
-                <th>When</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.results.map((r) => {
-                const pct = Math.round((r.score / r.total) * 100);
-                const cls = pct >= 70 ? "good" : pct >= 40 ? "mid" : "bad";
-                return (
-                  <tr key={r.id}>
-                    <td>
-                      <b>{r.student}</b>
-                    </td>
-                    <td>{r.test}</td>
-                    <td>
-                      <span className={`score-chip ${cls}`}>
-                        {r.score}/{r.total} ({pct}%)
-                      </span>
-                    </td>
-                    <td className="small muted">
-                      {new Date(r.created_at).toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-card">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Test</th>
+                  <th>Score</th>
+                  <th>When</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.results.map((r) => {
+                  const pct = Math.round((r.score / r.total) * 100);
+                  const cls = pct >= 70 ? "good" : pct >= 40 ? "mid" : "bad";
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <b style={{ color: "#111827" }}>{r.student}</b>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>{r.test}</td>
+                      <td>
+                        <span className={`score-chip ${cls}`}>
+                          {r.score}/{r.total} ({pct}%)
+                        </span>
+                      </td>
+                      <td className="small muted">
+                        {new Date(r.created_at).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ))}
     </div>
   );

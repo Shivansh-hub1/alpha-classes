@@ -6,6 +6,8 @@ export default function AdminLogout() {
     window.location.reload();
   }
   return (
-    <button className="btn btn-outline" onClick={logout}>Logout</button>
+    <button type="button" className="btn btn-outline" onClick={logout} style={{ fontSize: 13, padding: "8px 16px" }}>
+      Logout →
+    </button>
   );
 }

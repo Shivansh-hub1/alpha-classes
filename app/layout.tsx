@@ -74,7 +74,7 @@ export const metadata: Metadata = {
   },
   other: {
     "theme-color": "#ff6b00",
-    "color-scheme": "light dark",
+    "color-scheme": "light",
     "geo.region": "IN-UP",
     "geo.placename": "Bikapur",
     "geo.position": "26.6025;82.1378",
