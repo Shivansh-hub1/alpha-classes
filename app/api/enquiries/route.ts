@@ -11,7 +11,8 @@ export async function POST(req: Request) {
 
     const name = String(body.name || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
-    const phone = String(body.phone || "").trim();
+    const rawPhone = String(body.phone || "").trim();
+    const phone = rawPhone.replace(/\D/g, "").slice(-10);
     const message = String(body.message || "").trim().slice(0, 2000);
     const courseId = Number(body.courseId) || null;
 
@@ -19,11 +20,14 @@ export async function POST(req: Request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
     if (!/^[6-9]\d{9}$/.test(phone)) return NextResponse.json({ error: "Please enter a valid 10-digit mobile number." }, { status: 400 });
 
-    await ensureDb();
-    await pool.query(
-      "INSERT INTO enquiries (name, email, phone, course_id, message) VALUES ($1,$2,$3,$4,$5)",
-      [name, email, phone, courseId, message]
-    );
+    if (process.env.DATABASE_URL) {
+      await ensureDb();
+      await pool.query(
+        "INSERT INTO enquiries (name, email, phone, course_id, message) VALUES ($1,$2,$3,$4,$5)",
+        [name, email, phone, courseId, message]
+      );
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("enquiry error", e);

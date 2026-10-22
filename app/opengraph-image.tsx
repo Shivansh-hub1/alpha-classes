@@ -15,9 +15,10 @@ export default function OpengraphImage() {
           flexDirection: "column",
           alignItems: "flex-start",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #111827 0%, #1f2937 100%)",
+          background: "linear-gradient(135deg, #111827 0%, #1e2638 100%)",
           padding: 80,
           fontFamily: "sans-serif",
+          position: "relative",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -37,16 +38,58 @@ export default function OpengraphImage() {
           >
             A
           </div>
-          <div style={{ color: "#fff", fontSize: 34, fontWeight: 800, letterSpacing: 1 }}>ALPHA CLASSES</div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ color: "#fff", fontSize: 36, fontWeight: 900, letterSpacing: 1 }}>
+              ALPHA CLASSES
+            </div>
+            <div style={{ color: "#ff6b00", fontSize: 18, fontWeight: 800, letterSpacing: 2 }}>
+              BIKAPUR, AYODHYA
+            </div>
+          </div>
         </div>
-        <div style={{ color: "#fff", fontSize: 68, fontWeight: 900, marginTop: 40, lineHeight: 1.1, letterSpacing: -2 }}>
-          Learn Today.
+
+        <div
+          style={{
+            color: "#fff",
+            fontSize: 64,
+            fontWeight: 900,
+            marginTop: 40,
+            lineHeight: 1.1,
+            letterSpacing: -2,
+          }}
+        >
+          Best Coaching in Bikapur.
         </div>
-        <div style={{ color: "#ff6b00", fontSize: 68, fontWeight: 900, lineHeight: 1.1, letterSpacing: -2 }}>
-          Lead Tomorrow.
+        <div
+          style={{
+            color: "#ff6b00",
+            fontSize: 64,
+            fontWeight: 900,
+            lineHeight: 1.1,
+            letterSpacing: -2,
+          }}
+        >
+          Learn Today. Lead Tomorrow.
         </div>
-        <div style={{ color: "#9aa3b2", fontSize: 26, marginTop: 34 }}>
-          Live classes · Test series · Study material · Doubt support
+
+        <div
+          style={{
+            color: "#a6b1c2",
+            fontSize: 24,
+            marginTop: 30,
+            display: "flex",
+            gap: 16,
+          }}
+        >
+          <span>Class 9–10</span>
+          <span>·</span>
+          <span>JEE</span>
+          <span>·</span>
+          <span>NEET</span>
+          <span>·</span>
+          <span>SSC</span>
+          <span>·</span>
+          <span>Online Test Series</span>
         </div>
       </div>
     ),

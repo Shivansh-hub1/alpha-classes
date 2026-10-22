@@ -1,54 +1,148 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import EnquiryForm from "@/components/EnquiryForm";
+import {
+  INSTITUTE_INFO,
+  CANONICAL_SITE_URL,
+  faqJsonLd,
+  breadcrumbJsonLd,
+} from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Contact Us — Admissions & Enquiries",
-  description: "Contact Alpha Classes for admissions, course details, free demo classes and fee structure. Send us your question and our team will get back to you.",
+  title: "Contact Us — Admissions, Address & Demo Classes | Alpha Classes Bikapur",
+  description:
+    "Contact Alpha Classes in Bikapur, Ayodhya for admissions, fee details, free demo classes, and batch timings. Address: Main Road near Tehsil Office, Bikapur.",
+  keywords: [
+    "alpha classes bikapur contact",
+    "coaching in bikapur address",
+    "best coaching in bikapur phone number",
+    "bikapur coaching center location",
+    "alpha classes bikapur admission",
+    "free demo class in bikapur",
+  ],
   alternates: { canonical: "/contact" },
 };
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [
-    {
-      "@type": "Question",
-      name: "How do I join a course at Alpha Classes?",
-      acceptedAnswer: { "@type": "Answer", text: "Create a free account, open the course page and click Enroll. For paid batches, our team will contact you about fee payment and batch timings." },
-    },
-    {
-      "@type": "Question",
-      name: "Can I try a free demo class?",
-      acceptedAnswer: { "@type": "Answer", text: "Yes! Send an enquiry with your name and mobile number and mention 'Free Demo' — we will schedule a live demo class for you." },
-    },
-    {
-      "@type": "Question",
-      name: "Are the tests free?",
-      acceptedAnswer: { "@type": "Answer", text: "Yes, all online practice tests on the Test Series page are free for registered students, with instant results and answer review." },
-    },
-  ],
-};
+const CONTACT_FAQS = [
+  {
+    question: "Where is Alpha Classes located in Bikapur?",
+    answer:
+      "Alpha Classes is located on Main Road, Near Tehsil / Block Office, Bikapur, District Ayodhya, Uttar Pradesh - 224206.",
+  },
+  {
+    question: "How can I attend a free demo class at Alpha Classes Bikapur?",
+    answer:
+      "You can fill out the enquiry form on this page with your name and mobile number, or visit our Bikapur center in person. We will schedule a free live demo class for your selected subject.",
+  },
+  {
+    question: "Are both offline classroom and online batches available?",
+    answer:
+      "Yes! We offer offline physical classroom coaching in Bikapur as well as live streaming and recorded sessions with our online test series.",
+  },
+  {
+    question: "How do I enroll in the online test series?",
+    answer:
+      "Simply create a free account on our website, navigate to the Test Series tab, and you can instantly attempt chapter-wise tests with full answer solutions.",
+  },
+];
 
 export default function ContactPage() {
+  const breadcrumbs = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: "Contact", path: "/contact" },
+  ]);
+
+  const contactJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: "Contact Alpha Classes Bikapur",
+    description: "Contact information, campus address, and admission inquiry form for Alpha Classes Bikapur.",
+    url: `${CANONICAL_SITE_URL}/contact`,
+  };
+
   return (
-    <main className="container">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+    <main className="container" style={{ paddingBottom: 60 }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(CONTACT_FAQS)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+      />
+
+      <nav aria-label="Breadcrumb" style={{ fontSize: 13, color: "#667085", margin: "20px 0 6px" }}>
+        <Link href="/" style={{ color: "#667085" }}>Home</Link>
+        <span style={{ margin: "0 8px" }}>/</span>
+        <span style={{ color: "var(--primary)", fontWeight: 700 }}>Contact Us</span>
+      </nav>
+
       <div className="page-head">
-        <h1>Contact Us</h1>
-        <p>Questions about courses, fees, batches or demo classes? Send us an enquiry — we usually reply within a day.</p>
+        <div className="badge">📍 Bikapur Center & Admissions</div>
+        <h1>Contact Alpha Classes Bikapur</h1>
+        <p>
+          Have questions about classroom batches, fee structures, faculty, or want to book a free demo class? Send us an inquiry or visit our Bikapur campus.
+        </p>
       </div>
-      <section className="section" style={{ paddingTop: 30 }}>
+
+      <section className="section" style={{ paddingTop: 20 }}>
         <div className="course-hero">
           <div>
-            <h2 style={{ fontSize: 22, marginBottom: 14 }}>Send an enquiry</h2>
+            <h2 style={{ fontSize: 22, marginBottom: 14 }}>Send an Admission Inquiry</h2>
             <EnquiryForm />
           </div>
+
           <aside className="buy-card">
-            <h3 style={{ fontSize: 17, marginBottom: 10 }}>Quick answers</h3>
-            <details className="faq-item"><summary>How do I join a course?</summary><p className="muted" style={{ marginTop: 8 }}>Create a free account, open the course page and click Enroll. For paid batches our team will contact you about fee and timings.</p></details>
-            <details className="faq-item"><summary>Can I try a free demo class?</summary><p className="muted" style={{ marginTop: 8 }}>Yes — send an enquiry with your mobile number and mention &quot;Free Demo&quot; and we will schedule one for you.</p></details>
-            <details className="faq-item"><summary>Are the online tests free?</summary><p className="muted" style={{ marginTop: 8 }}>Yes, all practice tests are free for registered students with instant results.</p></details>
-            <p className="small muted" style={{ marginTop: 14 }}>You can also call or visit us — contact details are updated by the institute.</p>
+            <h3 style={{ fontSize: 18, marginBottom: 14 }}>📍 Campus & Contact Details</h3>
+            <div style={{ display: "grid", gap: 12, fontSize: 14, color: "#344054" }}>
+              <div>
+                <strong>Alpha Classes Bikapur</strong>
+                <p className="muted" style={{ marginTop: 2 }}>
+                  {INSTITUTE_INFO.address.streetAddress},<br />
+                  {INSTITUTE_INFO.address.addressLocality}, {INSTITUTE_INFO.address.addressRegion} — {INSTITUTE_INFO.address.postalCode}
+                </p>
+              </div>
+
+              <div>
+                <strong>📞 Phone / WhatsApp:</strong>
+                <p className="muted" style={{ marginTop: 2 }}>
+                  <a href={`tel:${INSTITUTE_INFO.telephone}`} style={{ color: "var(--primary)", fontWeight: 700 }}>
+                    {INSTITUTE_INFO.telephone}
+                  </a>
+                </p>
+              </div>
+
+              <div>
+                <strong>✉️ Email:</strong>
+                <p className="muted" style={{ marginTop: 2 }}>
+                  <a href={`mailto:${INSTITUTE_INFO.email}`} style={{ color: "inherit" }}>
+                    {INSTITUTE_INFO.email}
+                  </a>
+                </p>
+              </div>
+
+              <div>
+                <strong>⏰ Center Timings:</strong>
+                <p className="muted" style={{ marginTop: 2 }}>
+                  Monday – Saturday: 7:00 AM – 7:30 PM<br />
+                  Sunday: 8:00 AM – 2:00 PM (Doubt & Test Sessions)
+                </p>
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid #eee", marginTop: 18, paddingTop: 16 }}>
+              <h4 style={{ fontSize: 15, marginBottom: 8 }}>Quick FAQs</h4>
+              {CONTACT_FAQS.slice(0, 2).map((faq, i) => (
+                <details key={i} className="faq-item" style={{ marginBottom: 6, padding: "10px 14px" }}>
+                  <summary style={{ fontSize: 13.5 }}>{faq.question}</summary>
+                  <p className="muted" style={{ fontSize: 13, marginTop: 6 }}>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
           </aside>
         </div>
       </section>

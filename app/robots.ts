@@ -1,15 +1,38 @@
 import type { MetadataRoute } from "next";
+import { CANONICAL_SITE_URL } from "@/lib/seo";
+
+const DISALLOWED_ROUTES = ["/api/", "/dashboard", "/admin", "/_next/"];
+
+const ALLOWED_ROUTES = [
+  "/",
+  "/courses",
+  "/courses/*",
+  "/tests",
+  "/tests/*",
+  "/materials",
+  "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/login",
+  "/signup",
+];
 
 export default function robots(): MetadataRoute.Robots {
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-classes.vercel.app";
   return {
     rules: [
       {
+        userAgent: "Googlebot",
+        allow: ALLOWED_ROUTES,
+        disallow: DISALLOWED_ROUTES,
+      },
+      {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/dashboard", "/api/"],
+        allow: ALLOWED_ROUTES,
+        disallow: DISALLOWED_ROUTES,
       },
     ],
-    sitemap: `${site}/sitemap.xml`,
+    sitemap: `${CANONICAL_SITE_URL}/sitemap.xml`,
+    host: CANONICAL_SITE_URL,
   };
 }
