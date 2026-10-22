@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
-import { pool, ensureDb, getTests } from "@/lib/db";
+import {
+  pool,
+  ensureDb,
+  getTests,
+  getCourses,
+  getAllBlogsAdmin,
+  getStudentsWithEnrollments,
+  getMaterials,
+} from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import AdminLogin from "@/components/AdminLogin";
 import AdminPanel, { AdminData } from "@/components/AdminPanel";
@@ -18,9 +26,7 @@ export default async function AdminPage() {
   await ensureDb();
 
   let enquiriesRows: any[] = [];
-  let studentsRows: any[] = [];
   let resultsRows: any[] = [];
-  let materialsRows: any[] = [];
 
   try {
     const enquiries = await pool.query(
@@ -29,34 +35,32 @@ export default async function AdminPage() {
     );
     enquiriesRows = enquiries.rows;
 
-    const students = await pool.query(
-      "SELECT id, name, email, phone, created_at FROM students ORDER BY created_at DESC LIMIT 200"
-    );
-    studentsRows = students.rows;
-
     const results = await pool.query(
       `SELECT r.id, s.name AS student, t.title AS test, r.score, r.total, r.created_at
        FROM test_results r JOIN students s ON s.id = r.student_id JOIN tests t ON t.id = r.test_id
        ORDER BY r.created_at DESC LIMIT 200`
     );
     resultsRows = results.rows;
-
-    const materials = await pool.query(
-      "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT 200"
-    );
-    materialsRows = materials.rows;
   } catch (err) {
     console.warn("Admin panel DB query warning (offline mode):", err);
   }
 
-  const tests = await getTests();
+  const [tests, courses, blogs, students, materials] = await Promise.all([
+    getTests(),
+    getCourses(),
+    getAllBlogsAdmin(),
+    getStudentsWithEnrollments(),
+    getMaterials(200, { courseId: "all" }),
+  ]);
 
   const data: AdminData = {
     enquiries: enquiriesRows,
-    students: studentsRows,
+    students,
     results: resultsRows,
-    materials: materialsRows,
+    materials,
     tests,
+    courses,
+    blogs,
   };
 
   return (
@@ -73,7 +77,7 @@ export default async function AdminPage() {
       >
         <div>
           <h1>Admin Control Panel</h1>
-          <p>Manage student inquiries, publish tests, upload materials and review test results.</p>
+          <p>Manage batches, prices, student enrollments, test series, blogs & study materials.</p>
         </div>
         <AdminLogout />
       </div>

@@ -20,6 +20,16 @@ export default async function Dashboard() {
 
   let enrolledRows: Array<{ id: number; slug: string; title: string; icon: string; level: string }> = [];
   let resultsRows: Array<{ id: number; title: string; slug: string; score: number; total: number; created_at: string }> = [];
+  let batchMaterials: Array<{
+    id: number;
+    title: string;
+    kind: string;
+    description: string;
+    url: string | null;
+    file_name: string | null;
+    file_size: number | null;
+    course_title: string;
+  }> = [];
 
   try {
     const enrolled = await pool.query<{ id: number; slug: string; title: string; icon: string; level: string }>(
@@ -35,6 +45,25 @@ export default async function Dashboard() {
       [session.uid]
     );
     resultsRows = results.rows;
+
+    const bMat = await pool.query<{
+      id: number;
+      title: string;
+      kind: string;
+      description: string;
+      url: string | null;
+      file_name: string | null;
+      file_size: number | null;
+      course_title: string;
+    }>(
+      `SELECT m.id, m.title, m.kind, m.description, m.url, m.file_name, m.file_size, c.title AS course_title
+       FROM materials m
+       JOIN courses c ON c.id = m.course_id
+       WHERE m.course_id IN (SELECT course_id FROM enrollments WHERE student_id = $1)
+       ORDER BY m.created_at DESC`,
+      [session.uid]
+    );
+    batchMaterials = bMat.rows;
   } catch (err) {
     console.warn("Dashboard DB warning (offline mode):", err);
   }
@@ -81,7 +110,7 @@ export default async function Dashboard() {
       >
         <div className="stat-card">
           <strong>{enrolledRows.length}</strong>
-          <span>Courses Enrolled</span>
+          <span>Batches Enrolled</span>
         </div>
         <div className="stat-card">
           <strong>{resultsRows.length}</strong>
@@ -101,7 +130,7 @@ export default async function Dashboard() {
       <section className="section" style={{ paddingTop: 10 }}>
         <div className="section-head">
           <div>
-            <h2 style={{ fontSize: 24 }}>My Courses</h2>
+            <h2 style={{ fontSize: 24 }}>My Enrolled Batches</h2>
           </div>
           <Link href="/courses" style={{ color: "var(--primary)", fontWeight: 800 }}>
             Browse catalog →
@@ -109,9 +138,9 @@ export default async function Dashboard() {
         </div>
         {enrolledRows.length === 0 ? (
           <div className="card" style={{ padding: 26 }}>
-            <p className="muted">You haven&apos;t enrolled in any course yet.</p>
+            <p className="muted">You haven&apos;t enrolled in any batch yet.</p>
             <Link className="btn btn-primary" href="/courses" style={{ marginTop: 12, display: "inline-block" }}>
-              Explore Courses & Enroll
+              Explore Courses & Batches
             </Link>
           </div>
         ) : (
@@ -124,13 +153,55 @@ export default async function Dashboard() {
                 </div>
                 <div className="card-body">
                   <h3>{c.title}</h3>
-                  <p>Continue learning →</p>
+                  <p>Access batch lessons & study material →</p>
                 </div>
               </Link>
             ))}
           </div>
         )}
       </section>
+
+      {/* Exclusive Batch Materials */}
+      {batchMaterials.length > 0 && (
+        <section className="section" style={{ paddingTop: 10 }}>
+          <div className="section-head">
+            <div>
+              <h2 style={{ fontSize: 24 }}>🔒 Exclusive Batch Materials & Notes</h2>
+              <p className="small muted">Study materials, PDF books & formula sheets provided exclusively to your batches.</p>
+            </div>
+          </div>
+          <div className="grid">
+            {batchMaterials.map((m) => (
+              <div key={m.id} className="card" style={{ padding: 20 }}>
+                <span className="tag joined" style={{ marginBottom: 10 }}>
+                  {m.course_title}
+                </span>
+                <h3 style={{ fontSize: 17, marginBottom: 6 }}>{m.title}</h3>
+                {m.description && <p className="small muted" style={{ marginBottom: 14 }}>{m.description}</p>}
+                {m.kind === "pdf" ? (
+                  <a
+                    className="btn btn-primary"
+                    href={`/api/materials/${m.id}/download`}
+                    style={{ width: "100%", textAlign: "center", display: "inline-block", padding: "8px 14px" }}
+                  >
+                    📥 Download PDF
+                  </a>
+                ) : (
+                  <a
+                    className="btn btn-outline"
+                    href={m.url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ width: "100%", textAlign: "center", display: "inline-block", padding: "8px 14px" }}
+                  >
+                    🔗 Open Drive Link →
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Test Performance & History */}
       <section className="section" style={{ paddingTop: 10 }}>
@@ -151,48 +222,50 @@ export default async function Dashboard() {
             </Link>
           </div>
         ) : (
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Test Title</th>
-                <th>Score</th>
-                <th>Accuracy</th>
-                <th>Attempted On</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resultsRows.map((r) => {
-                const pct = Math.round((r.score / r.total) * 100);
-                const cls = pct >= 75 ? "good" : pct >= 45 ? "mid" : "bad";
-                return (
-                  <tr key={r.id}>
-                    <td>
-                      <b>{r.title}</b>
-                    </td>
-                    <td>
-                      <span className={`score-chip ${cls}`}>
-                        {r.score}/{r.total} ({pct}%)
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ fontWeight: 700, color: cls === "good" ? "var(--green)" : "#475467" }}>
-                        {pct >= 75 ? "High Accuracy" : "Needs Review"}
-                      </span>
-                    </td>
-                    <td className="muted small">
-                      {new Date(r.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                    </td>
-                    <td>
-                      <Link className="status-btn" href={`/tests/${r.slug}`} style={{ color: "var(--primary)" }}>
-                        Retake Test
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-card">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>Test Title</th>
+                  <th>Score</th>
+                  <th>Accuracy</th>
+                  <th>Attempted On</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {resultsRows.map((r) => {
+                  const pct = Math.round((r.score / r.total) * 100);
+                  const cls = pct >= 75 ? "good" : pct >= 45 ? "mid" : "bad";
+                  return (
+                    <tr key={r.id}>
+                      <td>
+                        <b>{r.title}</b>
+                      </td>
+                      <td>
+                        <span className={`score-chip ${cls}`}>
+                          {r.score}/{r.total} ({pct}%)
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontWeight: 700, color: cls === "good" ? "var(--green)" : "#475467" }}>
+                          {pct >= 75 ? "High Accuracy" : "Needs Review"}
+                        </span>
+                      </td>
+                      <td className="small muted">
+                        {new Date(r.created_at).toLocaleString("en-IN")}
+                      </td>
+                      <td>
+                        <Link className="status-btn" href={`/tests/${r.slug}`}>
+                          Retake
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -200,25 +273,30 @@ export default async function Dashboard() {
       <section className="section" style={{ paddingTop: 10 }}>
         <div className="section-head">
           <div>
-            <h2 style={{ fontSize: 24 }}>Recommended Tests For You</h2>
-            <p>Sharpen your speed with chapter-wise timed practice.</p>
+            <h2 style={{ fontSize: 24 }}>Recommended Tests for You</h2>
           </div>
+          <Link href="/tests" style={{ color: "var(--primary)", fontWeight: 800 }}>
+            View all tests →
+          </Link>
         </div>
         <div className="grid">
           {allTests.slice(0, 3).map((t) => (
-            <article key={t.id} className="card">
-              <div className="card-top" style={{ height: 100 }}>
-                <div className="icon">🧪</div>
-                <span className="level">{t.category || "Practice"}</span>
+            <div key={t.id} className="card">
+              <div className="card-top">
+                <span className="tag new">{t.category || "General"}</span>
+                <span className="level">⏱ {t.duration_min} min</span>
               </div>
               <div className="card-body">
                 <h3>{t.title}</h3>
-                <p>{t.question_count} Qs · {t.duration_min} min</p>
-                <Link className="btn btn-primary" href={`/tests/${t.slug}`} style={{ width: "100%", textAlign: "center" }}>
-                  Start Practice Test
-                </Link>
+                <p>{t.description}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                  <span className="small muted">{t.question_count} Questions</span>
+                  <Link className="btn btn-primary" href={`/tests/${t.slug}`} style={{ padding: "8px 16px", fontSize: 13.5 }}>
+                    Start Test →
+                  </Link>
+                </div>
               </div>
-            </article>
+            </div>
           ))}
         </div>
       </section>

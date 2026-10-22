@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Course } from "@/lib/db";
 
-export default function MaterialsUpload() {
+export default function MaterialsUpload({ courses = [] }: { courses?: Course[] }) {
   const router = useRouter();
   const [kind, setKind] = useState<"pdf" | "link">("pdf");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("test-series");
+  const [courseId, setCourseId] = useState<string>("free");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -29,12 +31,17 @@ export default function MaterialsUpload() {
       form.set("title", title);
       form.set("category", category);
       form.set("description", description);
+      if (courseId !== "free") {
+        form.set("course_id", courseId);
+      }
       if (kind === "pdf" && file) form.set("file", file);
       if (kind === "link") form.set("url", url);
       const res = await fetch("/api/admin/materials", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed.");
-      setDone(`✓ "${title}" is now live on the Free Materials page.`);
+      
+      const destName = courseId === "free" ? "Free Materials page" : "Selected Batch portal";
+      setDone(`✓ "${title}" uploaded successfully to ${destName}!`);
       setTitle("");
       setDescription("");
       setUrl("");
@@ -50,15 +57,48 @@ export default function MaterialsUpload() {
   }
 
   return (
-    <form className="form" onSubmit={submit} style={{ maxWidth: 620 }}>
+    <form className="form" onSubmit={submit} style={{ maxWidth: 660 }}>
       <div className="admin-tabs" style={{ margin: "0 0 4px" }}>
-        <button type="button" className={kind === "pdf" ? "active" : ""} onClick={() => setKind("pdf")}>📄 Upload PDF</button>
-        <button type="button" className={kind === "link" ? "active" : ""} onClick={() => setKind("link")}>🔗 Google Drive Link</button>
+        <button type="button" className={kind === "pdf" ? "active" : ""} onClick={() => setKind("pdf")}>
+          📄 Upload PDF
+        </button>
+        <button type="button" className={kind === "link" ? "active" : ""} onClick={() => setKind("link")}>
+          🔗 Google Drive Link
+        </button>
       </div>
 
-      <div>
-        <label htmlFor="mat-title">Title *</label>
-        <input id="mat-title" className="input" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder={kind === "pdf" ? "e.g. JEE Main Mock Test 1 (PDF)" : "e.g. NCERT Physics Class 11 — Full Book"} />
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
+        <div>
+          <label htmlFor="mat-title">Material Title *</label>
+          <input
+            id="mat-title"
+            className="input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder={kind === "pdf" ? "e.g. JEE Main Mock Test 1 (PDF)" : "e.g. NCERT Physics Class 11 — Full Book"}
+          />
+        </div>
+        <div>
+          <label htmlFor="mat-dest">Target Destination *</label>
+          <select
+            id="mat-dest"
+            className="input"
+            value={courseId}
+            onChange={(e) => setCourseId(e.target.value)}
+          >
+            <option value="free">🌐 Free Material (Public)</option>
+            {courses.length > 0 && (
+              <optgroup label="🔒 Lock to Specific Batch">
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title} ({c.level})
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -66,8 +106,8 @@ export default function MaterialsUpload() {
           <label htmlFor="mat-cat">Category *</label>
           <select id="mat-cat" className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="test-series">Test Series</option>
-            <option value="book">Book</option>
-            <option value="notes">Notes</option>
+            <option value="book">Book & PYQs</option>
+            <option value="notes">Revision Notes</option>
           </select>
         </div>
         {kind === "pdf" ? (
@@ -85,7 +125,13 @@ export default function MaterialsUpload() {
 
       <div>
         <label htmlFor="mat-desc">Description (optional)</label>
-        <input id="mat-desc" className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description students will see" />
+        <input
+          id="mat-desc"
+          className="input"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Short description students will see"
+        />
       </div>
 
       {error && <div className="form-error">{error}</div>}

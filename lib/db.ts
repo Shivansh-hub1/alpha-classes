@@ -6,7 +6,7 @@ const globalForDb = globalThis as unknown as { pool?: Pool; initPromise?: Promis
 
 // bump this when SCHEMA gains new tables/columns — ensures migrations
 // re-run even inside warm server instances
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 export const pool =
   globalForDb.pool ??
@@ -98,14 +98,31 @@ CREATE TABLE IF NOT EXISTS materials (
   file_name TEXT,
   file_size INT,
   downloads INT NOT NULL DEFAULT 0,
+  course_id INT REFERENCES courses(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS blogs (
+  id SERIAL PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  title TEXT NOT NULL,
+  excerpt TEXT NOT NULL DEFAULT '',
+  content TEXT NOT NULL,
+  author TEXT NOT NULL DEFAULT 'Er. Shivansh Verma',
+  category TEXT NOT NULL DEFAULT 'Preparation Guide',
+  tags TEXT NOT NULL DEFAULT 'bikapur,coaching,exams',
+  read_time INT NOT NULL DEFAULT 5,
+  published BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_enquiries_created ON enquiries(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_materials_created ON materials(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blogs_created ON blogs(created_at DESC);
 
 -- Migrations for existing schemas
 ALTER TABLE tests ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'General';
 ALTER TABLE questions ADD COLUMN IF NOT EXISTS explanation TEXT NOT NULL DEFAULT '';
+ALTER TABLE materials ADD COLUMN IF NOT EXISTS course_id INT REFERENCES courses(id) ON DELETE SET NULL;
 `;
 
 export const COURSES_SEED: Array<[string, string, string, string, string, string, number, number, boolean, number]> = [
@@ -168,6 +185,7 @@ const MATERIALS_FALLBACK: Material[] = [
     file_name: "Class_10_Science_Formula_Sheet.pdf",
     file_size: 1420000,
     downloads: 1250,
+    course_id: null,
     created_at: new Date().toISOString(),
   },
   {
@@ -180,6 +198,7 @@ const MATERIALS_FALLBACK: Material[] = [
     file_name: null,
     file_size: null,
     downloads: 2430,
+    course_id: null,
     created_at: new Date().toISOString(),
   },
   {
@@ -192,6 +211,7 @@ const MATERIALS_FALLBACK: Material[] = [
     file_name: "NEET_Biology_NCERT_Diagrams.pdf",
     file_size: 2150000,
     downloads: 3100,
+    course_id: null,
     created_at: new Date().toISOString(),
   },
   {
@@ -204,7 +224,87 @@ const MATERIALS_FALLBACK: Material[] = [
     file_name: "SSC_CGL_Quant_Tricks.pdf",
     file_size: 980000,
     downloads: 1890,
+    course_id: null,
     created_at: new Date().toISOString(),
+  },
+];
+
+export const BLOGS_SEED: Array<{
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  category: string;
+  tags: string;
+  read_time: number;
+  created_at: string;
+}> = [
+  {
+    slug: "best-coaching-in-bikapur-guide",
+    title: "How to Choose the Best Coaching in Bikapur for Class 9, 10 & Board Exams",
+    excerpt: "Looking for top coaching in Bikapur? Discover the 5 essential factors: Kota-standard conceptual teaching, regular test series, dedicated doubt clearing, and track record.",
+    category: "Coaching Guide",
+    author: "Er. Shivansh Verma",
+    tags: "best coaching in bikapur,coaching in bikapur,alpha classes bikapur,class 10 coaching",
+    read_time: 4,
+    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+    content: `Choosing the right coaching institute is one of the most critical decisions a student and their parents make in Bikapur. With board exams becoming increasingly application-oriented, relying solely on school lectures or rote learning is no longer sufficient.
+
+### 1. Kota-Standard Conceptual Teaching
+Many institutes focus merely on finishing chapters rather than building fundamental concepts. At Alpha Classes Bikapur, our teachers focus on first-principles understanding in Mathematics and Science, ensuring students know *why* a theorem works before memorizing formulas.
+
+### 2. Timed Weekly Test Series with Detailed Solutions
+Merely studying theory does not guarantee high marks. Weekly mock tests simulate actual board examination environments, training students in time management, precision, and reducing exam anxiety.
+
+### 3. Dedicated 1-on-1 Doubt Clearing
+In large batches, shy students often hesitate to ask questions. A genuine top coaching institute in Bikapur must provide daily doubt hours where any student can sit with faculty to resolve conceptual hurdles.
+
+### 4. Comprehensive Study Materials & Formula Sheets
+Handwritten crisp notes, NCERT line-by-line summaries, and 10-year chapterwise PYQs save countless hours of revision before final exams.
+
+### Visit Alpha Classes in Bikapur
+Centrally located on Main Road near Tehsil / Block Office, Alpha Classes provides modern digital classrooms and free demo sessions. Book your demo today!`,
+  },
+  {
+    slug: "crack-jee-neet-preparation-bikapur",
+    title: "Cracking JEE & NEET from Bikapur: Complete Preparation Strategy & Roadmap",
+    excerpt: "You do not need to migrate to Kota to crack JEE Main or NEET. Learn how Bikapur students can achieve top percentile scores with disciplined self-study, NCERT mastery, and test analysis.",
+    category: "JEE & NEET",
+    author: "Er. Shivansh Verma",
+    tags: "jee coaching in bikapur,neet coaching in bikapur,alpha classes,best coaching in bikapur",
+    read_time: 5,
+    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
+    content: `Every year, thousands of students from Ayodhya and Bikapur travel to distant coaching hubs like Kota or Lucknow. However, modern competitive exams like JEE Main and NEET UG strictly adhere to the NCERT syllabus. With the right local mentorship and rigorous online test series, cracking top national ranks from Bikapur is entirely achievable.
+
+### Phase 1: NCERT as the Bible (Physics, Chemistry, Biology)
+- **NEET:** Over 90% of Biology and Chemistry questions are directly derived from NCERT lines.
+- **JEE Main:** Inorganic Chemistry and Physics fundamentals are grounded in NCERT theory and exemplar problems.
+
+### Phase 2: High-Volume Question Practice
+Theoretical knowledge without solving previous year questions (PYQs) leads to negative marking. Practice at least 40-50 quality MCQs per subject daily.
+
+### Phase 3: Simulated Online Mock Tests & Score Analytics
+Alpha Classes provides a dedicated online test runner matching NTA exam interfaces. Instant accuracy metrics, time-spent analysis, and step-by-step solutions highlight weak areas for immediate remediation.
+
+### Join Alpha Classes JEE & NEET Batches
+Experience rigorous preparation right in Bikapur with personalized faculty guidance.`,
+  },
+  {
+    slug: "class-10-science-maths-board-strategy",
+    title: "Scoring 95%+ in CBSE & UP Board Class 10 Science and Maths",
+    excerpt: "Proven study blueprint for Class 9 and 10 students to score above 95% in board examinations with smart chapter prioritization and weekly testing.",
+    category: "Board Strategy",
+    author: "Er. Shivansh Verma",
+    tags: "class 10 coaching in bikapur,maths coaching in bikapur,science coaching,alpha classes bikapur",
+    read_time: 4,
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    content: `Class 10 is the stepping stone for competitive exam readiness. Here is the step-by-step blueprint followed by Alpha Classes top rankers:
+
+1. **Daily Problem Solving:** Dedicate 45 minutes daily to Maths problem sets.
+2. **Formula & Diagram Flashcards:** Keep high-yield Biology diagrams and Physics formulas on flashcards for daily 10-minute reviews.
+3. **Weekly Test Series:** Take the chapter-wise mock tests on Alpha Classes Test portal every Sunday.
+4. **Targeted Doubt Solving:** Clear questions within 24 hours rather than letting confusion accumulate before exams.`,
   },
 ];
 
@@ -236,6 +336,17 @@ async function migrate() {
             );
           }
         }
+      }
+    }
+
+    // Seed initial blogs if empty
+    const blogCountRes = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM blogs");
+    if (Number(blogCountRes.rows[0].count) === 0) {
+      for (const b of BLOGS_SEED) {
+        await client.query(
+          "INSERT INTO blogs (slug, title, excerpt, content, author, category, tags, read_time, published, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9,$9) ON CONFLICT (slug) DO NOTHING",
+          [b.slug, b.title, b.excerpt, b.content, b.author, b.category, b.tags, b.read_time, b.created_at]
+        );
       }
     }
   } finally {
@@ -297,7 +408,33 @@ export type Material = {
   file_name: string | null;
   file_size: number | null;
   downloads: number;
+  course_id: number | null;
+  course_title?: string | null;
   created_at: string;
+};
+
+export type Blog = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  category: string;
+  tags: string;
+  read_time: number;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StudentWithCourses = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  created_at: string;
+  courses: Array<{ id: number; title: string; slug: string }>;
 };
 
 // ---------- queries with safe fallbacks ----------
@@ -448,15 +585,271 @@ export async function deleteTest(id: number): Promise<void> {
   await pool.query("DELETE FROM tests WHERE id = $1", [id]);
 }
 
-export async function getMaterials(limit = 200): Promise<Material[]> {
+export async function createCourse(data: {
+  slug: string;
+  title: string;
+  level: string;
+  icon?: string;
+  description: string;
+  highlights?: string;
+  classes_count: number;
+  price: number;
+  featured?: boolean;
+}): Promise<Course> {
+  await ensureDb();
+  const { rows } = await pool.query<Course>(
+    "INSERT INTO courses (slug, title, level, icon, description, highlights, classes_count, price, featured) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
+    [
+      data.slug,
+      data.title,
+      data.level || "Foundation",
+      data.icon || "📚",
+      data.description,
+      data.highlights || "",
+      data.classes_count || 0,
+      data.price || 0,
+      !!data.featured,
+    ]
+  );
+  return rows[0];
+}
+
+export async function updateCourse(
+  id: number,
+  data: Partial<Omit<Course, "id">>
+): Promise<Course | null> {
+  await ensureDb();
+  const fields: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+
+  for (const [key, val] of Object.entries(data)) {
+    if (val !== undefined) {
+      fields.push(`${key} = $${idx++}`);
+      values.push(val);
+    }
+  }
+
+  if (fields.length === 0) return null;
+  values.push(id);
+
+  const { rows } = await pool.query<Course>(
+    `UPDATE courses SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+  return rows[0] || null;
+}
+
+export async function deleteCourse(id: number): Promise<void> {
+  await ensureDb();
+  await pool.query("DELETE FROM courses WHERE id = $1", [id]);
+}
+
+// ============ Blogs ============
+export async function getBlogs(limit = 100): Promise<Blog[]> {
   try {
     await ensureDb();
     if (!connectionString) throw new Error("No DB");
-    const { rows } = await pool.query<Material>(
-      "SELECT id, title, category, kind, description, url, file_name, file_size, downloads, created_at FROM materials ORDER BY created_at DESC LIMIT $1",
+    const { rows } = await pool.query<Blog>(
+      "SELECT id, slug, title, excerpt, content, author, category, tags, read_time, published, created_at, updated_at FROM blogs WHERE published = true ORDER BY created_at DESC LIMIT $1",
       [limit]
     );
     if (rows.length) return rows;
   } catch {}
-  return MATERIALS_FALLBACK.slice(0, limit);
+  return BLOGS_SEED.slice(0, limit).map((b, i) => ({
+    id: i + 1,
+    slug: b.slug,
+    title: b.title,
+    excerpt: b.excerpt,
+    content: b.content,
+    author: b.author,
+    category: b.category,
+    tags: b.tags,
+    read_time: b.read_time,
+    published: true,
+    created_at: b.created_at,
+    updated_at: b.created_at,
+  }));
+}
+
+export async function getAllBlogsAdmin(): Promise<Blog[]> {
+  try {
+    await ensureDb();
+    if (!connectionString) throw new Error("No DB");
+    const { rows } = await pool.query<Blog>(
+      "SELECT id, slug, title, excerpt, content, author, category, tags, read_time, published, created_at, updated_at FROM blogs ORDER BY created_at DESC LIMIT 200"
+    );
+    if (rows.length) return rows;
+  } catch {}
+  return getBlogs();
+}
+
+export async function getBlog(slug: string): Promise<Blog | null> {
+  try {
+    await ensureDb();
+    if (!connectionString) throw new Error("No DB");
+    const { rows } = await pool.query<Blog>(
+      "SELECT id, slug, title, excerpt, content, author, category, tags, read_time, published, created_at, updated_at FROM blogs WHERE slug = $1",
+      [slug]
+    );
+    if (rows[0]) return rows[0];
+  } catch {}
+  const fallback = BLOGS_SEED.find((b) => b.slug === slug);
+  if (!fallback) return null;
+  return {
+    id: 1,
+    slug: fallback.slug,
+    title: fallback.title,
+    excerpt: fallback.excerpt,
+    content: fallback.content,
+    author: fallback.author,
+    category: fallback.category,
+    tags: fallback.tags,
+    read_time: fallback.read_time,
+    published: true,
+    created_at: fallback.created_at,
+    updated_at: fallback.created_at,
+  };
+}
+
+export async function createBlog(data: {
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  author?: string;
+  category?: string;
+  tags?: string;
+  read_time?: number;
+}): Promise<Blog> {
+  await ensureDb();
+  const { rows } = await pool.query<Blog>(
+    "INSERT INTO blogs (slug, title, excerpt, content, author, category, tags, read_time, published) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true) RETURNING *",
+    [
+      data.slug,
+      data.title,
+      data.excerpt,
+      data.content,
+      data.author || "Er. Shivansh Verma",
+      data.category || "Coaching Guide",
+      data.tags || "alpha classes,bikapur",
+      data.read_time || 4,
+    ]
+  );
+  return rows[0];
+}
+
+export async function updateBlog(
+  id: number,
+  data: Partial<Omit<Blog, "id" | "created_at">>
+): Promise<Blog | null> {
+  await ensureDb();
+  const fields: string[] = ["updated_at = now()"];
+  const values: any[] = [];
+  let idx = 1;
+
+  for (const [key, val] of Object.entries(data)) {
+    if (val !== undefined && key !== "updated_at") {
+      fields.push(`${key} = $${idx++}`);
+      values.push(val);
+    }
+  }
+
+  values.push(id);
+  const { rows } = await pool.query<Blog>(
+    `UPDATE blogs SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+  return rows[0] || null;
+}
+
+export async function deleteBlog(id: number): Promise<void> {
+  await ensureDb();
+  await pool.query("DELETE FROM blogs WHERE id = $1", [id]);
+}
+
+// ============ Enrollments / User Access Control ============
+export async function grantStudentAccess(studentId: number, courseId: number): Promise<void> {
+  await ensureDb();
+  await pool.query(
+    "INSERT INTO enrollments (student_id, course_id) VALUES ($1, $2) ON CONFLICT (student_id, course_id) DO NOTHING",
+    [studentId, courseId]
+  );
+}
+
+export async function revokeStudentAccess(studentId: number, courseId: number): Promise<void> {
+  await ensureDb();
+  await pool.query(
+    "DELETE FROM enrollments WHERE student_id = $1 AND course_id = $2",
+    [studentId, courseId]
+  );
+}
+
+export async function getStudentsWithEnrollments(limit = 200): Promise<StudentWithCourses[]> {
+  try {
+    await ensureDb();
+    if (!connectionString) throw new Error("No DB");
+    const { rows } = await pool.query<StudentWithCourses>(
+      `SELECT s.id, s.name, s.email, s.phone, s.created_at,
+              COALESCE(
+                json_agg(
+                  json_build_object('id', c.id, 'title', c.title, 'slug', c.slug)
+                ) FILTER (WHERE c.id IS NOT NULL),
+                '[]'
+              ) AS courses
+       FROM students s
+       LEFT JOIN enrollments e ON e.student_id = s.id
+       LEFT JOIN courses c ON c.id = e.course_id
+       GROUP BY s.id
+       ORDER BY s.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  } catch (err) {
+    console.warn("getStudentsWithEnrollments error:", err);
+    return [];
+  }
+}
+
+// ============ Materials with Course Destination ============
+export async function getMaterials(
+  limit = 200,
+  filter?: { courseId?: number | null | "all" }
+): Promise<Material[]> {
+  try {
+    await ensureDb();
+    if (!connectionString) throw new Error("No DB");
+
+    let query = `
+      SELECT m.id, m.title, m.category, m.kind, m.description, m.url, m.file_name, m.file_size, m.downloads, m.course_id, m.created_at,
+             c.title AS course_title
+      FROM materials m
+      LEFT JOIN courses c ON c.id = m.course_id
+    `;
+    const params: any[] = [];
+
+    if (filter?.courseId === "all") {
+      // return all materials regardless of course_id (for admin)
+      query += " ORDER BY m.created_at DESC LIMIT $1";
+      params.push(limit);
+    } else if (typeof filter?.courseId === "number") {
+      // return materials specifically for this course/batch
+      query += " WHERE m.course_id = $1 ORDER BY m.created_at DESC LIMIT $2";
+      params.push(filter.courseId, limit);
+    } else {
+      // default: free / public materials only (course_id IS NULL)
+      query += " WHERE m.course_id IS NULL ORDER BY m.created_at DESC LIMIT $1";
+      params.push(limit);
+    }
+
+    const { rows } = await pool.query<Material>(query, params);
+    if (rows.length) return rows;
+  } catch {}
+
+  return MATERIALS_FALLBACK.slice(0, limit).map((m) => ({
+    ...m,
+    course_id: null,
+    course_title: null,
+  }));
 }

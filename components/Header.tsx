@@ -38,6 +38,7 @@ export default function Header() {
           <Link href="/courses">Courses</Link>
           <Link href="/tests">Test Series</Link>
           <Link href="/materials">Free Materials</Link>
+          <Link href="/blog">Blog</Link>
           <Link href="/#features">Why Alpha</Link>
           <Link href="/about">About Us</Link>
           <Link href="/contact">Contact</Link>
@@ -77,6 +78,7 @@ export default function Header() {
         <Link href="/courses">Courses</Link>
         <Link href="/tests">Test Series</Link>
         <Link href="/materials">Free Materials</Link>
+        <Link href="/blog">Blog</Link>
         <Link href="/#features">Why Alpha</Link>
         <Link href="/about">About Us</Link>
         <Link href="/contact">Contact</Link>

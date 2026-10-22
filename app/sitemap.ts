@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getCourses, getTests } from "@/lib/db";
+import { getCourses, getTests, getBlogs } from "@/lib/db";
 import { CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -10,9 +10,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let courseUrls: MetadataRoute.Sitemap = [];
   let testUrls: MetadataRoute.Sitemap = [];
+  let blogUrls: MetadataRoute.Sitemap = [];
 
   try {
-    const [courses, tests] = await Promise.all([getCourses(), getTests()]);
+    const [courses, tests, blogs] = await Promise.all([getCourses(), getTests(), getBlogs()]);
     courseUrls = courses.map((c) => ({
       url: `${site}/courses/${c.slug}`,
       lastModified: now,
@@ -21,6 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
     testUrls = tests.map((t) => ({
       url: `${site}/tests/${t.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    }));
+    blogUrls = blogs.map((b) => ({
+      url: `${site}/blog/${b.slug}`,
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.85,
@@ -34,6 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${site}/courses`, lastModified: now, changeFrequency: "daily", priority: 0.95 },
     { url: `${site}/tests`, lastModified: now, changeFrequency: "daily", priority: 0.95 },
     { url: `${site}/materials`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${site}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${site}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${site}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${site}/signup`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
@@ -42,5 +50,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${site}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
-  return [...staticRoutes, ...courseUrls, ...testUrls];
+  return [...staticRoutes, ...courseUrls, ...testUrls, ...blogUrls];
 }

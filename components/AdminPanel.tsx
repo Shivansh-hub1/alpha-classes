@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import MaterialsUpload from "@/components/MaterialsUpload";
 import TestCreator from "@/components/TestCreator";
-import type { Test } from "@/lib/db";
+import BatchManager from "@/components/BatchManager";
+import BlogManager from "@/components/BlogManager";
+import type { Test, Course, Blog, Material, StudentWithCourses } from "@/lib/db";
 
 export type Enquiry = {
   id: number;
@@ -16,13 +18,7 @@ export type Enquiry = {
   created_at: string;
   course: string | null;
 };
-export type Student = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  created_at: string;
-};
+
 export type ResultRow = {
   id: number;
   student: string;
@@ -31,32 +27,26 @@ export type ResultRow = {
   total: number;
   created_at: string;
 };
-export type MaterialRow = {
-  id: number;
-  title: string;
-  category: string;
-  kind: string;
-  description: string;
-  url: string | null;
-  file_name: string | null;
-  file_size: number | null;
-  downloads: number;
-  created_at: string;
-};
+
 export type AdminData = {
   enquiries: Enquiry[];
-  students: Student[];
+  students: StudentWithCourses[];
   results: ResultRow[];
-  materials: MaterialRow[];
+  materials: Material[];
   tests: Test[];
+  courses: Course[];
+  blogs: Blog[];
 };
 
 const STATUSES = ["new", "contacted", "joined", "closed"] as const;
 
 export default function AdminPanel({ data }: { data: AdminData }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"enquiries" | "tests" | "materials" | "students" | "results">("enquiries");
-  const [busy, setBusy] = useState<number | null>(null);
+  const [tab, setTab] = useState<
+    "enquiries" | "batches" | "tests" | "materials" | "students" | "blogs" | "results"
+  >("enquiries");
+  const [busy, setBusy] = useState<number | string | null>(null);
+  const [grantSelected, setGrantSelected] = useState<Record<number, number>>({});
 
   async function setStatus(id: number, status: string) {
     setBusy(id);
@@ -94,6 +84,44 @@ export default function AdminPanel({ data }: { data: AdminData }) {
     }
   }
 
+  async function handleGrantAccess(studentId: number) {
+    const courseId = grantSelected[studentId] || data.courses[0]?.id;
+    if (!courseId) return;
+
+    setBusy(`grant-${studentId}`);
+    try {
+      const res = await fetch("/api/admin/enrollments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: studentId, course_id: courseId }),
+      });
+      if (!res.ok) throw new Error("Failed to grant access.");
+      router.refresh();
+    } catch (e: any) {
+      alert(e?.message || "Failed to grant access.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleRevokeAccess(studentId: number, courseId: number, courseTitle: string) {
+    if (!confirm(`Revoke access to "${courseTitle}" from this student?`)) return;
+    setBusy(`revoke-${studentId}-${courseId}`);
+    try {
+      const res = await fetch("/api/admin/enrollments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: studentId, course_id: courseId }),
+      });
+      if (!res.ok) throw new Error("Failed to revoke access.");
+      router.refresh();
+    } catch (e: any) {
+      alert(e?.message || "Failed to revoke access.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const counts = { new: data.enquiries.filter((e) => e.status === "new").length };
 
   return (
@@ -111,6 +139,14 @@ export default function AdminPanel({ data }: { data: AdminData }) {
         </button>
         <button
           type="button"
+          className={tab === "batches" ? "active" : ""}
+          onClick={() => setTab("batches")}
+        >
+          <span>Batches & Prices</span>
+          <span className="tab-badge">{data.courses.length}</span>
+        </button>
+        <button
+          type="button"
           className={tab === "tests" ? "active" : ""}
           onClick={() => setTab("tests")}
         >
@@ -122,7 +158,7 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           className={tab === "materials" ? "active" : ""}
           onClick={() => setTab("materials")}
         >
-          <span>Free Materials</span>
+          <span>Materials (Free & Batches)</span>
           <span className="tab-badge">{data.materials.length}</span>
         </button>
         <button
@@ -130,8 +166,16 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           className={tab === "students" ? "active" : ""}
           onClick={() => setTab("students")}
         >
-          <span>Students</span>
+          <span>Students & Batch Access</span>
           <span className="tab-badge">{data.students.length}</span>
+        </button>
+        <button
+          type="button"
+          className={tab === "blogs" ? "active" : ""}
+          onClick={() => setTab("blogs")}
+        >
+          <span>SEO Blogs</span>
+          <span className="tab-badge">{data.blogs.length}</span>
         </button>
         <button
           type="button"
@@ -142,6 +186,16 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           <span className="tab-badge">{data.results.length}</span>
         </button>
       </div>
+
+      {/* Batches & Prices Tab */}
+      {tab === "batches" && (
+        <BatchManager courses={data.courses} onUpdated={() => router.refresh()} />
+      )}
+
+      {/* SEO Blogs Tab */}
+      {tab === "blogs" && (
+        <BlogManager blogs={data.blogs} onUpdated={() => router.refresh()} />
+      )}
 
       {/* Tests & Add Test Tab */}
       {tab === "tests" && (
@@ -212,9 +266,10 @@ export default function AdminPanel({ data }: { data: AdminData }) {
       {/* Materials Tab */}
       {tab === "materials" && (
         <div>
-          <h3 style={{ fontSize: 18, marginBottom: 12 }}>Upload new material</h3>
-          <MaterialsUpload />
-          <h3 style={{ fontSize: 18, margin: "28px 0 12px" }}>Published materials</h3>
+          <h3 style={{ fontSize: 18, marginBottom: 12 }}>Upload New Material (Free or Batch Locked)</h3>
+          <MaterialsUpload courses={data.courses} />
+
+          <h3 style={{ fontSize: 18, margin: "28px 0 12px" }}>Published Study Materials</h3>
           {data.materials.length === 0 ? (
             <p className="muted">No materials yet — upload the first one above.</p>
           ) : (
@@ -223,6 +278,7 @@ export default function AdminPanel({ data }: { data: AdminData }) {
                 <thead>
                   <tr>
                     <th>Title</th>
+                    <th>Destination</th>
                     <th>Category</th>
                     <th>Type</th>
                     <th>Downloads</th>
@@ -241,6 +297,17 @@ export default function AdminPanel({ data }: { data: AdminData }) {
                             <span className="small muted">{m.description}</span>
                           </>
                         ) : null}
+                      </td>
+                      <td>
+                        {m.course_title ? (
+                          <span className="tag joined" title="Locked to students in this batch">
+                            🔒 {m.course_title}
+                          </span>
+                        ) : (
+                          <span className="tag new" title="Public for all students">
+                            🌐 Free / Public
+                          </span>
+                        )}
                       </td>
                       <td>
                         <span className="tag new">{m.category}</span>
@@ -334,48 +401,119 @@ export default function AdminPanel({ data }: { data: AdminData }) {
           </div>
         ))}
 
-      {/* Students Tab */}
+      {/* Students & Batch Access Tab */}
       {tab === "students" &&
         (data.students.length === 0 ? (
-          <p className="muted">No students yet.</p>
+          <p className="muted">No registered students yet.</p>
         ) : (
-          <div className="table-card">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.students.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <b style={{ color: "#111827" }}>{s.name}</b>
-                    </td>
-                    <td>
-                      <a href={`mailto:${s.email}`} style={{ color: "inherit", textDecoration: "underline" }}>
-                        {s.email}
-                      </a>
-                    </td>
-                    <td>
-                      {s.phone ? (
-                        <a href={`tel:${s.phone}`} style={{ color: "var(--primary)", fontWeight: 600 }}>
-                          📞 {s.phone}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="small muted">
-                      {new Date(s.created_at).toLocaleDateString("en-IN")}
-                    </td>
+          <div>
+            <div style={{ marginBottom: 14 }}>
+              <h3 style={{ fontSize: 18 }}>Student Accounts & Batch Access Control</h3>
+              <p className="small muted">
+                Grant or revoke student access to any coaching batch with a single click. Enrolled students gain immediate access to batch materials and test resources.
+              </p>
+            </div>
+            <div className="table-card">
+              <table className="data">
+                <thead>
+                  <tr>
+                    <th>Student Name & Contact</th>
+                    <th>Enrolled Batches</th>
+                    <th>Grant Batch Access</th>
+                    <th>Joined</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.students.map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        <b style={{ color: "#111827", fontSize: 14.5 }}>{s.name}</b>
+                        <div className="small muted" style={{ marginTop: 3 }}>
+                          <a href={`mailto:${s.email}`} style={{ color: "inherit", textDecoration: "underline" }}>
+                            {s.email}
+                          </a>
+                          {s.phone ? (
+                            <>
+                              <br />
+                              <a href={`tel:${s.phone}`} style={{ color: "var(--primary)", fontWeight: 600 }}>
+                                📞 {s.phone}
+                              </a>
+                            </>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td style={{ minWidth: 220 }}>
+                        {s.courses.length === 0 ? (
+                          <span className="small muted">No active batches</span>
+                        ) : (
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {s.courses.map((c) => (
+                              <span
+                                key={c.id}
+                                className="tag joined"
+                                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                              >
+                                <span>{c.title}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRevokeAccess(s.id, c.id, c.title)}
+                                  disabled={busy === `revoke-${s.id}-${c.id}`}
+                                  title={`Revoke access to ${c.title}`}
+                                  style={{
+                                    border: "none",
+                                    background: "none",
+                                    color: "#b42318",
+                                    cursor: "pointer",
+                                    fontWeight: 900,
+                                    fontSize: 12,
+                                    padding: "0 2px",
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <select
+                            className="input"
+                            style={{ padding: "6px 10px", fontSize: 13, width: "auto" }}
+                            value={grantSelected[s.id] || (data.courses[0]?.id ?? "")}
+                            onChange={(e) =>
+                              setGrantSelected({ ...grantSelected, [s.id]: Number(e.target.value) })
+                            }
+                          >
+                            {data.courses.map((c) => {
+                              const alreadyHas = s.courses.some((sc) => sc.id === c.id);
+                              return (
+                                <option key={c.id} value={c.id} disabled={alreadyHas}>
+                                  {c.title} {alreadyHas ? "(Active)" : `(₹${c.price})`}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn-outline"
+                            style={{ padding: "6px 12px", fontSize: 12.5 }}
+                            onClick={() => handleGrantAccess(s.id)}
+                            disabled={busy === `grant-${s.id}`}
+                          >
+                            + Grant
+                          </button>
+                        </div>
+                      </td>
+                      <td className="small muted">
+                        {new Date(s.created_at).toLocaleDateString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ))}
 

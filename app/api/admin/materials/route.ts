@@ -20,6 +20,11 @@ export async function POST(req: Request) {
     const description = String(form.get("description") || "").trim().slice(0, 1000);
     const url = String(form.get("url") || "").trim();
     const file = form.get("file");
+    const courseIdRaw = form.get("course_id");
+    const courseId =
+      courseIdRaw && courseIdRaw !== "null" && courseIdRaw !== ""
+        ? Number(courseIdRaw)
+        : null;
 
     if (title.length < 3) return NextResponse.json({ error: "Please enter a title (min 3 characters)." }, { status: 400 });
     if (!CATEGORIES.has(category)) return NextResponse.json({ error: "Invalid category." }, { status: 400 });
@@ -35,8 +40,8 @@ export async function POST(req: Request) {
       }
       const buffer = Buffer.from(await file.arrayBuffer());
       await pool.query(
-        "INSERT INTO materials (title, category, kind, description, file_data, file_name, file_size) VALUES ($1,$2,'pdf',$3,$4,$5,$6)",
-        [title, category, description, buffer, file.name, file.size]
+        "INSERT INTO materials (title, category, kind, description, file_data, file_name, file_size, course_id) VALUES ($1,$2,'pdf',$3,$4,$5,$6,$7)",
+        [title, category, description, buffer, file.name, file.size, courseId]
       );
       return NextResponse.json({ ok: true });
     }
@@ -46,8 +51,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Please enter a valid https:// link (Google Drive or any URL)." }, { status: 400 });
       }
       await pool.query(
-        "INSERT INTO materials (title, category, kind, description, url) VALUES ($1,$2,'link',$3,$4)",
-        [title, category, description, url]
+        "INSERT INTO materials (title, category, kind, description, url, course_id) VALUES ($1,$2,'link',$3,$4,$5)",
+        [title, category, description, url, courseId]
       );
       return NextResponse.json({ ok: true });
     }
