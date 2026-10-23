@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { pool, ensureDb, getTests } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import LogoutButton from "@/components/LogoutButton";
+import { IconGraduation, IconLock, IconDownload, IconExternalLink, CourseIconBadge } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
@@ -91,8 +92,10 @@ export default async function Dashboard() {
         }}
       >
         <div>
-          <span className="badge">🎓 Registered Student</span>
-          <h1>Hi {firstName} 👋</h1>
+          <span className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconGraduation size={16} /> Registered Student
+          </span>
+          <h1>Hi {firstName}</h1>
           <p>Welcome to your learning progress center at Alpha Classes Bikapur.</p>
         </div>
         <LogoutButton />
@@ -148,7 +151,9 @@ export default async function Dashboard() {
             {enrolledRows.map((c) => (
               <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
                 <div className="card-top">
-                  <div className="icon">{c.icon}</div>
+                  <div className="icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--primary)" }}>
+                    <CourseIconBadge level={c.level} icon={c.icon} size={28} />
+                  </div>
                   <span className="level">{c.level}</span>
                 </div>
                 <div className="card-body">
@@ -166,7 +171,9 @@ export default async function Dashboard() {
         <section className="section" style={{ paddingTop: 10 }}>
           <div className="section-head">
             <div>
-              <h2 style={{ fontSize: 24 }}>🔒 Exclusive Batch Materials & Notes</h2>
+              <h2 style={{ fontSize: 24, display: "flex", alignItems: "center", gap: 8 }}>
+                <IconLock size={22} /> Exclusive Batch Materials & Notes
+              </h2>
               <p className="small muted">Study materials, PDF books & formula sheets provided exclusively to your batches.</p>
             </div>
           </div>
@@ -182,9 +189,9 @@ export default async function Dashboard() {
                   <a
                     className="btn btn-primary"
                     href={`/api/materials/${m.id}/download`}
-                    style={{ width: "100%", textAlign: "center", display: "inline-block", padding: "8px 14px" }}
+                    style={{ width: "100%", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 14px" }}
                   >
-                    📥 Download PDF
+                    <IconDownload size={16} /> Download PDF
                   </a>
                 ) : (
                   <a
@@ -192,9 +199,9 @@ export default async function Dashboard() {
                     href={m.url || "#"}
                     target="_blank"
                     rel="noreferrer"
-                    style={{ width: "100%", textAlign: "center", display: "inline-block", padding: "8px 14px" }}
+                    style={{ width: "100%", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 14px" }}
                   >
-                    🔗 Open Drive Link →
+                    <IconExternalLink size={16} /> Open Drive Link →
                   </a>
                 )}
               </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Course } from "@/lib/db";
+import { CourseIconBadge, IconVideo } from "@/components/Icons";
 
 export default function CoursesList({ courses }: { courses: Course[] }) {
   const [level, setLevel] = useState("all");
@@ -76,14 +77,18 @@ export default function CoursesList({ courses }: { courses: Course[] }) {
           {filtered.map((c) => (
             <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
               <div className="card-top">
-                <div className="icon">{c.icon}</div>
+                <div className="icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--primary)" }}>
+                  <CourseIconBadge level={c.level} icon={c.icon} size={28} />
+                </div>
                 <span className="level">{c.level}</span>
               </div>
               <div className="card-body">
                 <h3>{c.title}</h3>
                 <p>{c.description}</p>
                 <div className="meta">
-                  <span>🎥 {c.classes_count} Classes</span>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <IconVideo size={15} /> {c.classes_count} Classes
+                  </span>
                   <b>₹{c.price.toLocaleString("en-IN")}</b>
                 </div>
               </div>

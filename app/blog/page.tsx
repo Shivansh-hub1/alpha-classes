@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getBlogs } from "@/lib/db";
+import { IconNewspaper } from "@/components/Icons";
 import { breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -65,7 +66,9 @@ export default async function BlogIndexPage() {
       </nav>
 
       <div className="page-head">
-        <div className="badge">📰 Academic Insights & Strategies</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconNewspaper size={16} /> Academic Insights & Strategies
+        </div>
         <h1>Alpha Classes Blog & Exam Guides</h1>
         <p>
           Actionable tips, syllabus breakdowns, and conceptual roadmaps authored by experienced educators at Alpha Classes Bikapur.

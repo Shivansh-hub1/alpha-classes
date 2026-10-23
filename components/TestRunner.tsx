@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { IconCheck, IconX, IconTarget, IconRefresh, IconLightbulb, IconClock, IconAlertTriangle, IconStar } from "@/components/Icons";
 
 export type QuestionItem = {
   id: number;
@@ -161,11 +162,15 @@ export default function TestRunner({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, margin: "24px 0 14px" }}>
             <div className="stat-card" style={{ background: "#ecfdf3", borderColor: "#a6f4c5" }}>
               <strong style={{ color: "#067647" }}>{result.correctCount}</strong>
-              <span style={{ color: "#067647" }}>✓ Correct</span>
+              <span style={{ color: "#067647", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <IconCheck size={14} /> Correct
+              </span>
             </div>
             <div className="stat-card" style={{ background: "#fef2f2", borderColor: "#fecaca" }}>
               <strong style={{ color: "#b42318" }}>{result.wrongCount}</strong>
-              <span style={{ color: "#b42318" }}>✗ Wrong</span>
+              <span style={{ color: "#b42318", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <IconX size={14} /> Wrong
+              </span>
             </div>
             <div className="stat-card" style={{ background: "#f8f9fa", borderColor: "#e5e7eb" }}>
               <strong style={{ color: "#475467" }}>{result.unansweredCount}</strong>
@@ -173,16 +178,18 @@ export default function TestRunner({
             </div>
             <div className="stat-card" style={{ background: "#fff7ed", borderColor: "#fed7aa" }}>
               <strong style={{ color: "#c2410c" }}>{result.accuracy}%</strong>
-              <span style={{ color: "#c2410c" }}>🎯 Accuracy</span>
+              <span style={{ color: "#c2410c", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <IconTarget size={14} /> Accuracy
+              </span>
             </div>
           </div>
 
           <p style={{ fontSize: 15, color: "#344054", marginTop: 12 }}>
             {pct >= 75
-              ? "🌟 Outstanding performance! Your concepts in this topic are solid. Keep attempting tests to maintain rank-level speed."
+              ? "Outstanding performance! Your concepts in this topic are solid. Keep attempting tests to maintain rank-level speed."
               : pct >= 45
-              ? "👍 Good attempt! Review the step-by-step explanations below for incorrect answers to clarify doubts."
-              : "📚 More practice needed. Review the solutions below and re-attempt the test to boost your score."}
+              ? "Good attempt! Review the step-by-step explanations below for incorrect answers to clarify doubts."
+              : "More practice needed. Review the solutions below and re-attempt the test to boost your score."}
           </p>
 
           {result.guest && (
@@ -227,8 +234,9 @@ export default function TestRunner({
                 setFlagged({});
                 setSecondsLeft(durationMin * 60);
               }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
             >
-              🔄 Retake Test
+              <IconRefresh size={16} /> Retake Test
             </button>
             <Link className="btn btn-primary" href="/tests">
               Explore More Tests →
@@ -340,9 +348,17 @@ export default function TestRunner({
                     >
                       {String.fromCharCode(65 + idx)}
                     </span>
-                    <span>{opt}</span>
-                    {isCorrectOption && <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700 }}>✓ Correct Answer</span>}
-                    {isSelected && !isCorrectOption && <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700 }}>✗ Your Choice</span>}
+                    <span style={{ fontSize: 14 }}>{opt}</span>
+                    {isCorrectOption && (
+                      <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <IconCheck size={14} /> Correct Answer
+                      </span>
+                    )}
+                    {isSelected && !isCorrectOption && (
+                      <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <IconX size={14} /> Your Choice
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -358,8 +374,8 @@ export default function TestRunner({
                   border: "1px solid #e2e8f0",
                 }}
               >
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: "var(--primary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
-                  💡 Step-by-Step Explanation
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: "var(--primary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <IconLightbulb size={15} /> Step-by-Step Explanation
                 </div>
                 <p style={{ margin: 0, fontSize: 14, color: "#334155", lineHeight: 1.5 }}>
                   {r.explanation}
@@ -396,11 +412,17 @@ export default function TestRunner({
         </div>
 
         <div style={{ textAlign: "right" }}>
-          <div className="time" style={{ letterSpacing: 1 }}>
-            ⏱ {mm}:{ss}
+          <div className="time" style={{ letterSpacing: 1, display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconClock size={18} /> {mm}:{ss}
           </div>
-          <div className="small" style={{ color: secondsLeft < 120 ? "#ff8a32" : "#aab1bf" }}>
-            {secondsLeft < 120 ? "⚠️ Submitting automatically soon" : "Time Remaining"}
+          <div className="small" style={{ color: secondsLeft < 120 ? "#ff8a32" : "#aab1bf", display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {secondsLeft < 120 ? (
+              <>
+                <IconAlertTriangle size={13} /> Submitting automatically soon
+              </>
+            ) : (
+              "Time Remaining"
+            )}
           </div>
         </div>
       </div>
@@ -455,10 +477,19 @@ export default function TestRunner({
                         color: isFlag ? "#b45309" : "#667085",
                         borderColor: isFlag ? "#fcd34d" : "#ddd",
                         fontWeight: 700,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
                       }}
                       title="Flag question to review before submitting"
                     >
-                      {isFlag ? "★ Flagged" : "☆ Flag"}
+                      {isFlag ? (
+                        <>
+                          <IconStar size={13} fill="currentColor" /> Flagged
+                        </>
+                      ) : (
+                        "Flag"
+                      )}
                     </button>
                     {isAnswered && (
                       <button

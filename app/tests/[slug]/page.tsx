@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getTestWithQuestions } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import TestRunner from "@/components/TestRunner";
+import { IconLightbulb } from "@/components/Icons";
 import { quizJsonLd, breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -106,8 +107,8 @@ export default async function TestPage({ params }: Props) {
             color: "#9a3412",
           }}
         >
-          <span>
-            💡 <b>Guest Mode:</b> You can attempt this practice test for free and review instant solutions. Login to save attempts to your student dashboard.
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconLightbulb size={16} /> <b>Guest Mode:</b> You can attempt this practice test for free and review instant solutions. Login to save attempts to your student dashboard.
           </span>
           <span style={{ display: "flex", gap: 8 }}>
             <Link className="btn btn-primary" href={`/login?next=/tests/${params.slug}`} style={{ padding: "7px 14px", fontSize: 13 }}>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
+import { IconMapPin, IconBuilding, IconCode, IconBook } from "@/components/Icons";
 
 export const metadata: Metadata = {
   title: "About Alpha Classes Bikapur — Mission, Faculty & Teaching Methodology",
@@ -52,7 +53,10 @@ export default function AboutPage() {
       </nav>
 
       <div className="page-head">
-        <div className="badge">📍 Bikapur, Ayodhya</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconMapPin size={14} color="var(--primary)" />
+          <span>Bikapur, Ayodhya</span>
+        </div>
         <h1>About Alpha Classes Bikapur</h1>
         <p>Learn Today. Lead Tomorrow. Empowering learners with deep concepts and disciplined practice.</p>
       </div>
@@ -125,15 +129,24 @@ export default function AboutPage() {
         <h2 style={{ fontSize: 24, margin: "32px 0 10px" }}>Classroom & Online Facilities in Bikapur</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14, margin: "16px 0 24px" }}>
           <div style={{ padding: 18, border: "1px solid var(--border)", borderRadius: 14, background: "#fafafa" }}>
-            <h4 style={{ fontSize: 16, marginBottom: 6 }}>🏢 Modern Classrooms</h4>
+            <h4 style={{ fontSize: 16, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+              <IconBuilding size={18} color="var(--primary)" />
+              <span>Modern Classrooms</span>
+            </h4>
             <p className="small muted">Spacious, air-cooled digital classrooms located near Tehsil / Block Office on Main Road, Bikapur.</p>
           </div>
           <div style={{ padding: 18, border: "1px solid var(--border)", borderRadius: 14, background: "#fafafa" }}>
-            <h4 style={{ fontSize: 16, marginBottom: 6 }}>💻 Computer Lab</h4>
+            <h4 style={{ fontSize: 16, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+              <IconCode size={18} color="var(--primary)" />
+              <span>Computer Lab</span>
+            </h4>
             <p className="small muted">Hands-on computer training, web development practice, and online mock exam terminals.</p>
           </div>
           <div style={{ padding: 18, border: "1px solid var(--border)", borderRadius: 14, background: "#fafafa" }}>
-            <h4 style={{ fontSize: 16, marginBottom: 6 }}>📚 Library & Reading Room</h4>
+            <h4 style={{ fontSize: 16, marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}>
+              <IconBook size={18} color="var(--primary)" />
+              <span>Library & Reading Room</span>
+            </h4>
             <p className="small muted">Quiet study environment stocked with reference books, NCERT textbooks, and past year question papers.</p>
           </div>
         </div>

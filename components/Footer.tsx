@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { INSTITUTE_INFO } from "@/lib/seo";
+import { IconMapPin } from "@/components/Icons";
 
 export default function Footer() {
   return (
@@ -14,8 +15,9 @@ export default function Footer() {
             <p style={{ marginTop: 12, fontSize: 13.5, color: "#9ca3af", lineHeight: 1.6 }}>
               Alpha Classes Bikapur is the top coaching center in Bikapur (Ayodhya) for Class 9–10, JEE, NEET, SSC and computer skill courses. Learn Today. Lead Tomorrow.
             </p>
-            <p style={{ marginTop: 10, fontSize: 13, color: "#9ca3af" }}>
-              📍 {INSTITUTE_INFO.address.streetAddress}, {INSTITUTE_INFO.address.addressLocality}
+            <p style={{ marginTop: 10, fontSize: 13, color: "#9ca3af", display: "flex", alignItems: "flex-start", gap: 6 }}>
+              <IconMapPin size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+              <span>{INSTITUTE_INFO.address.streetAddress}, {INSTITUTE_INFO.address.addressLocality}</span>
             </p>
           </div>
 

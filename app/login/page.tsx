@@ -48,7 +48,7 @@ function LoginForm() {
     <div className="auth-wrap">
       <div className="auth-card">
         <span className="badge" style={{ marginBottom: 10 }}>Alpha Classes Bikapur</span>
-        <h1>Welcome Back 👋</h1>
+        <h1>Welcome Back</h1>
         <p className="sub">Log in to access your course materials and practice tests.</p>
         <form className="form" onSubmit={submit}>
           <div>

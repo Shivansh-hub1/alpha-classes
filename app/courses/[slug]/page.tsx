@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { pool, ensureDb } from "@/lib/db";
 import EnrollButton from "@/components/EnrollButton";
 import EnquiryForm from "@/components/EnquiryForm";
+import { IconMapPin, IconBook, IconVideo, IconFlask } from "@/components/Icons";
 import { courseJsonLd, breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -89,18 +90,28 @@ export default async function CoursePage({ params }: Props) {
       </nav>
 
       <div className="page-head">
-        <span className="badge">📍 Available at Bikapur Center & Online</span>
-        <h1 style={{ marginTop: 8 }}>{course.icon} {course.title}</h1>
+        <span className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconMapPin size={15} /> Available at Bikapur Center & Online
+        </span>
+        <h1 style={{ marginTop: 8 }}>{course.title}</h1>
         <p>{course.description}</p>
       </div>
 
       <div className="course-hero">
         <div>
           <div className="test-meta">
-            <span>📘 {course.level}</span>
-            <span>🎥 {course.classes_count} Classes</span>
-            <span>🧪 Test Series Included</span>
-            <span>📍 Bikapur Classroom & Online</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <IconBook size={15} /> {course.level}
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <IconVideo size={15} /> {course.classes_count} Classes
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <IconFlask size={15} /> Test Series Included
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <IconMapPin size={15} /> Bikapur Classroom & Online
+            </span>
           </div>
 
           <h2 style={{ fontSize: 22, margin: "22px 0 10px" }}>Course Curriculum & What You Get</h2>

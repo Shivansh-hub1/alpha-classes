@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getMaterials } from "@/lib/db";
 import MaterialsGrid from "@/components/MaterialsGrid";
+import { IconGift } from "@/components/Icons";
 import { breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -51,7 +52,9 @@ export default async function MaterialsPage() {
       />
 
       <div className="page-head">
-        <div className="badge">🎁 100% Free Resources</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconGift size={16} /> 100% Free Resources
+        </div>
         <h1>Free Study Material & Downloads</h1>
         <p>
           Handcrafted chapter-wise formula sheets, NCERT summary notes, and test series PDFs created by Alpha Classes Bikapur teachers. Free for every student.

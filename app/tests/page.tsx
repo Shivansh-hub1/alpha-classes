@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getTests } from "@/lib/db";
 import TestsList from "@/components/TestsList";
 import { breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
+import { IconClock, IconTrending, IconSparkles, IconCheckCircle } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,10 @@ export default async function TestsPage() {
       />
 
       <div className="page-head">
-        <div className="badge">⏱ Real Exam Simulation</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconClock size={14} color="var(--primary)" />
+          <span>Real Exam Simulation</span>
+        </div>
         <h1>Online Test Series</h1>
         <p>
           Practice chapter-wise & full-length mock tests designed by expert teachers at Alpha Classes Bikapur.
@@ -76,19 +80,27 @@ export default async function TestsPage() {
         }}
       >
         <div style={{ padding: "14px 18px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-          <strong>⏱ Timed Practice</strong>
+          <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <IconClock size={16} color="var(--primary)" /> Timed Practice
+          </strong>
           <p className="small muted" style={{ marginTop: 2 }}>Exam-style countdown to develop speed and accuracy.</p>
         </div>
         <div style={{ padding: "14px 18px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-          <strong>📊 Instant Scorecard</strong>
+          <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <IconTrending size={16} color="var(--primary)" /> Instant Scorecard
+          </strong>
           <p className="small muted" style={{ marginTop: 2 }}>Immediate evaluation of marks, correct/incorrect ratio & accuracy %.</p>
         </div>
         <div style={{ padding: "14px 18px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-          <strong>💡 Step-by-Step Solutions</strong>
+          <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <IconSparkles size={16} color="var(--primary)" /> Step-by-Step Solutions
+          </strong>
           <p className="small muted" style={{ marginTop: 2 }}>Full explanations for every question to resolve doubts instantly.</p>
         </div>
         <div style={{ padding: "14px 18px", borderRadius: 12, background: "#f8fafc", border: "1px solid #e2e8f0" }}>
-          <strong>🎁 100% Free</strong>
+          <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <IconCheckCircle size={16} color="var(--primary)" /> 100% Free
+          </strong>
           <p className="small muted" style={{ marginTop: 2 }}>No hidden fees — open for all students and aspirants.</p>
         </div>
       </div>

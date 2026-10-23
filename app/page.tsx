@@ -3,6 +3,20 @@ import type { Metadata } from "next";
 import { getCourses, getTests, getMaterials } from "@/lib/db";
 import DemoModal from "@/components/DemoModal";
 import {
+  IconAward,
+  IconTarget,
+  IconMapPin,
+  IconGraduation,
+  IconFilePdf,
+  IconCheckCircle,
+  IconTrending,
+  IconDownload,
+  IconBook,
+  IconStar,
+  IconVideo,
+  CourseIconBadge,
+} from "@/components/Icons";
+import {
   SITE_NAME,
   SITE_DESCRIPTION,
   SITE_KEYWORDS,
@@ -63,8 +77,8 @@ export default async function Home() {
         <div className="container hero-grid">
           <div>
             <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--primary)", display: "inline-block" }}></span>
-              <span>🏆 #1 Coaching Institute in Bikapur, Ayodhya</span>
+              <IconAward size={15} color="var(--primary)" />
+              <span>#1 Coaching Institute in Bikapur, Ayodhya</span>
             </div>
             <h1 style={{ letterSpacing: "-2px", lineHeight: 1.04 }}>
               Learn Today.
@@ -78,8 +92,9 @@ export default async function Home() {
               <Link className="btn btn-primary" href="/courses" style={{ padding: "13px 24px", fontSize: 15 }}>
                 Explore Batches & Courses →
               </Link>
-              <Link className="btn btn-outline" href="/tests" style={{ padding: "13px 20px", fontSize: 15 }}>
-                🧪 Free Test Series
+              <Link className="btn btn-outline" href="/tests" style={{ padding: "13px 20px", fontSize: 15, display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <IconTarget size={17} color="var(--primary)" />
+                <span>Free Test Series</span>
               </Link>
               <DemoModal />
             </div>
@@ -87,7 +102,9 @@ export default async function Home() {
               <span>✓ Offline & Online Batches</span>
               <span>✓ Free NCERT Material</span>
               <span>✓ Instant Scorecard & Solutions</span>
-              <span>📍 Near Tehsil Office, Bikapur</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <IconMapPin size={14} color="var(--primary)" /> Near Tehsil Office, Bikapur
+              </span>
             </div>
           </div>
 
@@ -146,7 +163,9 @@ export default async function Home() {
             <span>Mock Tests Available</span>
           </div>
           <div className="stat">
-            <strong>4.9 ★</strong>
+            <strong style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              4.9 <IconStar size={20} fill="#f59e0b" color="#f59e0b" />
+            </strong>
             <span>Student & Parent Rating</span>
           </div>
         </div>
@@ -168,14 +187,18 @@ export default async function Home() {
             {courses.map((c) => (
               <Link key={c.id} className="card" href={`/courses/${c.slug}`}>
                 <div className="card-top">
-                  <div className="icon">{c.icon}</div>
+                  <div className="icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--primary)" }}>
+                    <CourseIconBadge level={c.level} icon={c.icon} size={28} />
+                  </div>
                   <span className="level">{c.level}</span>
                 </div>
                 <div className="card-body">
                   <h3>{c.title}</h3>
                   <p>{c.description}</p>
                   <div className="meta">
-                    <span>🎥 {c.classes_count} Classes</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <IconVideo size={14} /> {c.classes_count} Classes
+                    </span>
                     <b>₹{c.price.toLocaleString("en-IN")}</b>
                   </div>
                 </div>
@@ -196,32 +219,32 @@ export default async function Home() {
           </div>
           <div className="feature-grid">
             <div className="feature-item">
-              <div className="ficon">👨‍🏫</div>
+              <div className="ficon"><IconGraduation size={30} color="var(--primary)" /></div>
               <h3>Experienced Faculty</h3>
               <p>Learn from subject matter experts passionate about building strong concepts from scratch.</p>
             </div>
             <div className="feature-item">
-              <div className="ficon">🧪</div>
+              <div className="ficon"><IconTarget size={30} color="var(--primary)" /></div>
               <h3>Smart Online & OMR Tests</h3>
               <p>Practice chapter-wise and full-length timed tests with instant scorecards and detailed solutions.</p>
             </div>
             <div className="feature-item">
-              <div className="ficon">📄</div>
+              <div className="ficon"><IconFilePdf size={30} color="var(--primary)" /></div>
               <h3>Free Study Material & Notes</h3>
               <p>Download NCERT notes, formula sheets, and solved PYQ books directly from our portal.</p>
             </div>
             <div className="feature-item">
-              <div className="ficon">🤝</div>
+              <div className="ficon"><IconCheckCircle size={30} color="var(--primary)" /></div>
               <h3>Dedicated Doubt Sessions</h3>
               <p>Never stay stuck — daily one-on-one doubt clearing sessions with teachers.</p>
             </div>
             <div className="feature-item">
-              <div className="ficon">📊</div>
+              <div className="ficon"><IconTrending size={30} color="var(--primary)" /></div>
               <h3>Performance Tracking</h3>
               <p>Personal student dashboard to monitor test scores, progress analytics, and weak areas.</p>
             </div>
             <div className="feature-item">
-              <div className="ficon">📍</div>
+              <div className="ficon"><IconMapPin size={30} color="var(--primary)" /></div>
               <h3>Prime Bikapur Location</h3>
               <p>Convenient classroom center on Main Road, Bikapur with modern digital classrooms.</p>
             </div>
@@ -245,7 +268,7 @@ export default async function Home() {
             {tests.slice(0, 3).map((t) => (
               <article key={t.id} className="card">
                 <div className="card-top" style={{ height: 110, background: "linear-gradient(135deg, #fff7ed, #fff)" }}>
-                  <div className="icon">📝</div>
+                  <div className="icon"><IconTarget size={24} color="var(--primary)" /></div>
                   <span className="level" style={{ background: "#fff", borderColor: "#ffd7b5", color: "#d95100" }}>
                     {t.category || "Free Test"}
                   </span>
@@ -268,7 +291,7 @@ export default async function Home() {
         <div className="container">
           <div className="section-head">
             <div>
-              <h2>Free Study Material & Downloads 🎁</h2>
+              <h2>Free Study Material & Downloads</h2>
               <p>Handcrafted formula sheets, NCERT notes, and question banks for every student in Bikapur.</p>
             </div>
             <Link href="/materials" style={{ color: "var(--primary)", fontWeight: 800 }}>
@@ -280,7 +303,7 @@ export default async function Home() {
               <article key={m.id} className="card">
                 <div className="card-top">
                   <div className="icon">
-                    {m.category === "test-series" ? "📝" : m.category === "book" ? "📗" : "🗒️"}
+                    <IconFilePdf size={24} color="var(--primary)" />
                   </div>
                   <span className="level">{m.kind === "pdf" ? "PDF Download" : "Drive Resource"}</span>
                 </div>
@@ -288,7 +311,9 @@ export default async function Home() {
                   <h3>{m.title}</h3>
                   <p>{m.description || "Free educational material from Alpha Classes Bikapur."}</p>
                   <div className="meta" style={{ marginBottom: 14 }}>
-                    <span>📥 {m.downloads} downloads</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <IconDownload size={14} /> {m.downloads} downloads
+                    </span>
                   </div>
                   <Link className="btn btn-outline" href="/materials" style={{ width: "100%", textAlign: "center" }}>
                     Access Download →

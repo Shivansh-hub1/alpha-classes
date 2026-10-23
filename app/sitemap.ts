@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getCourses, getTests, getBlogs } from "@/lib/db";
-import { CANONICAL_SITE_URL } from "@/lib/seo";
+import { siteBaseUrlHttps } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = CANONICAL_SITE_URL;
+  const site = siteBaseUrlHttps();
   const now = new Date();
 
   let courseUrls: MetadataRoute.Sitemap = [];

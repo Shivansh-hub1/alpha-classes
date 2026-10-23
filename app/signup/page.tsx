@@ -50,7 +50,7 @@ function SignupForm() {
     <div className="auth-wrap">
       <div className="auth-card">
         <span className="badge" style={{ marginBottom: 10 }}>Alpha Classes Bikapur</span>
-        <h1>Create Free Account 🚀</h1>
+        <h1>Create Free Account</h1>
         <p className="sub">Join Alpha Classes — attempt free online tests and track your scores.</p>
         <form className="form" onSubmit={submit}>
           <div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import EnquiryForm from "@/components/EnquiryForm";
+import { IconMapPin, IconPhone, IconMail } from "@/components/Icons";
 import {
   INSTITUTE_INFO,
   CANONICAL_SITE_URL,
@@ -82,7 +83,10 @@ export default function ContactPage() {
       </nav>
 
       <div className="page-head">
-        <div className="badge">📍 Bikapur Center & Admissions</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconMapPin size={14} color="var(--primary)" />
+          <span>Bikapur Center & Admissions</span>
+        </div>
         <h1>Contact Alpha Classes Bikapur</h1>
         <p>
           Have questions about classroom batches, fee structures, faculty, or want to book a free demo class? Send us an inquiry or visit our Bikapur campus.
@@ -97,7 +101,10 @@ export default function ContactPage() {
           </div>
 
           <aside className="buy-card">
-            <h3 style={{ fontSize: 18, marginBottom: 14 }}>📍 Campus & Contact Details</h3>
+            <h3 style={{ fontSize: 18, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+              <IconMapPin size={20} color="var(--primary)" />
+              <span>Campus & Contact Details</span>
+            </h3>
             <div style={{ display: "grid", gap: 12, fontSize: 14, color: "#344054" }}>
               <div>
                 <strong>Alpha Classes Bikapur</strong>
@@ -108,7 +115,9 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <strong>📞 Phone / WhatsApp:</strong>
+                <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <IconPhone size={15} color="var(--primary)" /> Phone / WhatsApp:
+                </strong>
                 <p className="muted" style={{ marginTop: 2 }}>
                   <a href={`tel:${INSTITUTE_INFO.telephone}`} style={{ color: "var(--primary)", fontWeight: 700 }}>
                     {INSTITUTE_INFO.telephone}
@@ -117,7 +126,9 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <strong>✉️ Email:</strong>
+                <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <IconMail size={15} color="var(--primary)" /> Email:
+                </strong>
                 <p className="muted" style={{ marginTop: 2 }}>
                   <a href={`mailto:${INSTITUTE_INFO.email}`} style={{ color: "inherit" }}>
                     {INSTITUTE_INFO.email}

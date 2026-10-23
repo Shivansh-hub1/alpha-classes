@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
-import { CANONICAL_SITE_URL } from "@/lib/seo";
+import { siteBaseUrlHttps } from "@/lib/seo";
+
+export const dynamic = "force-dynamic";
 
 const DISALLOWED_ROUTES = ["/api/", "/dashboard", "/admin", "/_next/"];
 
@@ -10,6 +12,8 @@ const ALLOWED_ROUTES = [
   "/tests",
   "/tests/*",
   "/materials",
+  "/blog",
+  "/blog/*",
   "/about",
   "/contact",
   "/privacy",
@@ -19,6 +23,7 @@ const ALLOWED_ROUTES = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  const site = siteBaseUrlHttps();
   return {
     rules: [
       {
@@ -32,7 +37,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: DISALLOWED_ROUTES,
       },
     ],
-    sitemap: `${CANONICAL_SITE_URL}/sitemap.xml`,
-    host: CANONICAL_SITE_URL,
+    sitemap: `${site}/sitemap.xml`,
+    host: site,
   };
 }

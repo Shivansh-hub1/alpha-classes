@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Material } from "@/lib/db";
+import { IconBook, IconTarget, IconFilePdf, IconDownload, IconExternalLink } from "@/components/Icons";
 
 const CATS = [
   { id: "all", label: "All Materials" },
@@ -82,8 +83,14 @@ export default function MaterialsGrid({ materials }: { materials: Material[] }) 
           {shown.map((m) => (
             <article key={m.id} className="card" style={{ display: "flex", flexDirection: "column" }}>
               <div className="card-top">
-                <div className="icon">
-                  {m.category === "test-series" ? "📝" : m.category === "book" ? "📗" : "🗒️"}
+                <div className="icon" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--primary)" }}>
+                  {m.category === "test-series" ? (
+                    <IconTarget size={26} />
+                  ) : m.category === "book" ? (
+                    <IconBook size={26} />
+                  ) : (
+                    <IconFilePdf size={26} />
+                  )}
                 </div>
                 <span className="level">
                   {m.kind === "pdf" ? "PDF Download" : "Drive Link"}
@@ -95,10 +102,16 @@ export default function MaterialsGrid({ materials }: { materials: Material[] }) 
                   {m.description || "Free study material from Alpha Classes Bikapur."}
                 </p>
                 <div className="meta" style={{ marginBottom: 14, paddingTop: 8, borderTop: "1px solid #f2f2f3" }}>
-                  <span>
-                    {m.kind === "pdf"
-                      ? `📄 ${fmtSize(m.file_size)} · 📥 ${m.downloads} downloads`
-                      : `🔗 ${m.downloads} opens`}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    {m.kind === "pdf" ? (
+                      <>
+                        <IconFilePdf size={14} /> {fmtSize(m.file_size)} · <IconDownload size={14} /> {m.downloads} downloads
+                      </>
+                    ) : (
+                      <>
+                        <IconExternalLink size={14} /> {m.downloads} opens
+                      </>
+                    )}
                   </span>
                   <span style={{ color: "var(--green)", fontWeight: 700 }}>Free</span>
                 </div>
@@ -106,9 +119,9 @@ export default function MaterialsGrid({ materials }: { materials: Material[] }) 
                   <a
                     className="btn btn-primary"
                     href={`/api/materials/${m.id}/download`}
-                    style={{ textAlign: "center", width: "100%" }}
+                    style={{ textAlign: "center", width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    ⬇ Download PDF
+                    <IconDownload size={16} /> Download PDF
                   </a>
                 ) : (
                   <a
@@ -116,9 +129,9 @@ export default function MaterialsGrid({ materials }: { materials: Material[] }) 
                     href={m.url || "#"}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ textAlign: "center", width: "100%" }}
+                    style={{ textAlign: "center", width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    🔗 Open Google Drive Resource
+                    <IconExternalLink size={16} /> Open Google Drive Resource
                   </a>
                 )}
               </div>

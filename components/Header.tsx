@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IconUser } from "@/components/Icons";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -46,8 +47,9 @@ export default function Header() {
         <div className="nav-actions">
           {user ? (
             <>
-              <Link className="btn btn-primary" href="/dashboard">
-                Hi {firstName} 👋 (Dashboard)
+              <Link className="btn btn-primary" href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                <IconUser size={16} />
+                <span>Hi {firstName} (Dashboard)</span>
               </Link>
               <button
                 className="btn btn-outline"

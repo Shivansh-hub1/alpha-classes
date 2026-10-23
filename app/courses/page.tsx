@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCourses } from "@/lib/db";
 import CoursesList from "@/components/CoursesList";
+import { IconGraduation } from "@/components/Icons";
 import { breadcrumbJsonLd, CANONICAL_SITE_URL } from "@/lib/seo";
 
 export const revalidate = 60;
@@ -59,7 +60,9 @@ export default async function CoursesPage() {
       />
 
       <div className="page-head">
-        <div className="badge">🎓 Structured Curriculums</div>
+        <div className="badge" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <IconGraduation size={16} /> Structured Curriculums
+        </div>
         <h1>All Courses at Alpha Classes Bikapur</h1>
         <p>
           Choose a program tailored for your academic goal. Live and recorded video lessons, chapter-wise mock tests, and physical + PDF study materials included in every enrollment.
